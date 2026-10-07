@@ -1,0 +1,41 @@
+{
+  "generated_at_utc": "2026-10-07T09:16:09.082401+00:00",
+  "input_files": {
+    "USDC": "data/raw/data/USDC_daily.csv",
+    "USDT": "data/raw/data/USDT_daily.csv",
+    "EVENTS": "data/raw/events/USDC_USDT_macro_event_context.csv"
+  },
+  "price_data": {
+    "USDC": {
+      "rows": 1826,
+      "first_date_utc": "2021-10-07",
+      "last_date_utc": "2026-10-06",
+      "calendar_days_in_span": 1826,
+      "missing_dates_in_span": 0,
+      "hourly_observations_min": 8,
+      "hourly_observations_max": 25,
+      "source": "DefiLlama (underlying price ID: coingecko:usd-coin)",
+      "method": "Hourly historical USD observations aggregated by UTC date; close=last observation; min/max are sampled hourly points, not exchange OHLC; missing dates blank; no interpolation"
+    },
+    "USDT": {
+      "rows": 1826,
+      "first_date_utc": "2021-10-07",
+      "last_date_utc": "2026-10-06",
+      "calendar_days_in_span": 1826,
+      "missing_dates_in_span": 0,
+      "hourly_observations_min": 6,
+      "hourly_observations_max": 25,
+      "source": "DefiLlama (underlying price ID: coingecko:tether)",
+      "method": "Hourly historical USD observations aggregated by UTC date; close=last observation; min/max are sampled hourly points, not exchange OHLC; missing dates blank; no interpolation"
+    }
+  },
+  "event_rows": 4,
+  "event_source_urls": 8,
+  "price_event_date_links": 18,
+  "notes": [
+    "Input files are read in place and are never copied, moved, or modified.",
+    "Price series are daily aggregates of hourly historical observations; sampled min/max are not exchange OHLC.",
+    "Macro event overlap is contextual annotation and does not establish causality.",
+    "No missing prices are interpolated by this script."
+  ]
+}
