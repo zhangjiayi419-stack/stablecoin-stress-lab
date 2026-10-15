@@ -50,7 +50,7 @@ def line(rows,fields,title):
 history,snapshots=history_data()
 prices=pd.DataFrame(history['prices']);prices['close_usd']=pd.to_numeric(prices['close_usd'])
 available=sorted({s['timestamp'][:10] for s in snapshots})
-pages=['My stablecoin check','Risk Assistant','Historical replay','Pool & slippage','ABM sandbox','Interactive Agents','Events & sources','Methodology','Forecasting Research']
+pages=['My stablecoin check','Risk Assistant','Historical replay','Pool & slippage','ABM sandbox','Interactive Agents','Events & sources','Methodology','Forecast','English Daily Brief','Forecasting Research']
 with st.sidebar:
     st.title('Stablecoin Stress Lab')
     page=st.radio('Workspace',pages)
@@ -191,18 +191,21 @@ Finite retail selling, FIFO institutional redemptions, capital-constrained arbit
 Independent token simulations form a synthetic portfolio path; correlations and joint market dynamics are not estimated. Mark losses, original-pool sale estimates and cohort queues have different meanings and must not be added. No personal redemption ETA or statistical VaR is produced.
 
 ### Risk workflow
-Inspired by FinAgent orchestration. Deterministic Python stages inspect data, run models, audit interpretation and create template reports. No LLM, MCP/A2A network or autonomous trading is connected.
+Inspired by FinAgent orchestration. Deterministic Python stages inspect data, run models, audit interpretation and create template reports. The separate English Daily Brief optionally uses Alibaba Qwen to summarize sourced data; numerical forecasts use AR(1). No autonomous trading is connected.
 
 ### Data
 Historical USD prices were sampled and aggregated by UTC day; daily min/max are not exchange OHLC. Sparse Ethereum snapshots record block identifiers and actual timestamps. Historical prices and pool state can differ in time. Event sources are curated independently.
 
 ### Limits
-Uncalibrated research prototype. No investment prediction, proof of safety or product-superiority claim. Source metadata and complete assumptions are included in exports.''')
+Uncalibrated research prototype. Statistical forecasts are experimental baselines, not investment advice, proof of safety or product-superiority claims. Source metadata and complete assumptions are included in exports.''')
     st.link_button('FinAgent paper','https://arxiv.org/abs/2512.02227')
+ elif page in ['Forecast','English Daily Brief']:
+    from forecast_ui import render_forecast
+    render_forecast(history['prices'],brief_page=page=='English Daily Brief')
  elif page=='Forecasting Research':
     st.title('JEPA forecasting research');st.warning('NOT TRAINED · NO FORECAST AVAILABLE')
     st.write('Proposed experiment: collect continuous hourly inputs, compare persistence / supervised backbone / the same backbone with JEPA pretraining, split chronologically, hold out complete stress events, and evaluate errors and event false alarms across multiple seeds. JEPA gains depend on backbone; the paper does not establish stablecoin forecasting performance.')
     st.link_button('JEPA paper','https://arxiv.org/abs/2609.31680')
-except (ValueError,LookupError,KeyError) as exc:
+except (ValueError,LookupError,KeyError,OSError) as exc:
     st.error(str(exc))
 st.caption('Stablecoin Stress Lab · Research prototype · Hypothetical simulations are not historical observations.')
