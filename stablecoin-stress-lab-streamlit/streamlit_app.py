@@ -98,6 +98,7 @@ def path_chart(rows,fields,title):
 history,prices,snapshots=research()
 market_rows,market,market_date,market_age=latest_market(history)
 available=sorted({s['timestamp'][:10] for s in snapshots})
+SNAPSHOT_LABELS={'2023-03-11':'USDC stress case','2022-05-12':'USDT stress case','2022-11-09':'FTX stress case'}
 PAGES=['Overview','Historical Research','Liquidity Stress Test','Models & Validation']
 with st.sidebar:
     st.markdown('<div class="brand-mark">◈</div><div class="brand">Stablecoin Stress Lab</div><div class="sidebar-kicker">LIQUIDITY RESEARCH</div>',unsafe_allow_html=True)
@@ -202,7 +203,7 @@ def historical():
     for event in history['events']:
         if event['event_id']==event_id:
             st.write('**'+event['summary']+'**')
-            st.write(event['price_series_note'])
+            st.markdown(event['price_series_note'].replace('$',r'\$'))
             st.caption(event['interpretation_caveat'])
             for source in history['sources']:
                 if source['event_id']==event_id:st.link_button('Read original source',source['source_url'])
@@ -222,7 +223,7 @@ def sale_experiment():
         c1,c2,c3=st.columns([1,1,1.3])
         asset=c1.selectbox('1 · Token to sell',['USDC','USDT'],key='sale_asset')
         amount=c2.number_input('2 · Tokens to sell',min_value=1.,max_value=1e9,value=100_000.,step=10_000.,key='sale_amount')
-        day=c3.selectbox('3 · Historical pool date',available,index=None if 'sale_date' in st.session_state else available.index('2023-03-11'),key='sale_date')
+        day=c3.selectbox('3 · Historical pool date',available,index=None if 'sale_date' in st.session_state else available.index('2023-03-11'),key='sale_date',format_func=lambda d:d+' · '+SNAPSHOT_LABELS[d] if d in SNAPSHOT_LABELS else d,help='A recorded historical pool state, not a forecast date. The March 2023 case is a useful starting point.')
         increase=st.select_slider('Hypothetical increase in all pool balances',[0,10,30,50,100],value=30,format_func=lambda v:f'+{v}%',key='sale_increase')
         submitted=st.form_submit_button('Compare execution estimates',type='primary')
     if submitted:
@@ -370,7 +371,7 @@ def participant_experiment():
 
 
 def stress_test():
-    header('03 / Mechanism experiments','One question. One explicit shock.','Start with a simple sale estimate or holdings scenario. Advanced participant rules are available when you need to inspect the mechanism.')
+    header('03 / Mechanism experiments','Liquidity stress experiments.','Start with a simple sale estimate or holdings scenario. Advanced participant rules are available when you need to inspect the mechanism.')
     strip('Historical starting conditions + hypothetical assumptions · Model outputs are estimates · No live quotes or trades')
     sale,holdings=st.tabs(['Sell a position','Stress my holdings'])
     with sale:sale_experiment()
@@ -381,7 +382,7 @@ def stress_test():
 
 
 def validation():
-    header('04 / Evidence standards','Know what the model can support.','Professional research starts with a clear benchmark, reproducible inputs and a visible boundary between numerical checks and real-world validation.')
+    header('04 / Evidence standards','Know what the model can support.','Compare forecast baselines, inspect model assumptions and trace the underlying data. See which results have been checked and which remain research hypotheses.')
     forecast_tab,execution_tab,data_tab,roadmap_tab=st.tabs(['Forecast validation','Execution & scenario models','Data & provenance','Research roadmap'])
     with forecast_tab:
         from forecast_ui import render_forecast_research
