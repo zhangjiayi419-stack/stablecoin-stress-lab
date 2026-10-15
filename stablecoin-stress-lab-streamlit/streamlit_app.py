@@ -226,6 +226,9 @@ def sale_experiment():
         day=c3.selectbox('3 · Historical pool date',available,index=None if 'sale_date' in st.session_state else available.index('2023-03-11'),key='sale_date',format_func=lambda d:d+' · '+SNAPSHOT_LABELS[d] if d in SNAPSHOT_LABELS else d,help='A recorded historical pool state, not a forecast date. The March 2023 case is a useful starting point.')
         increase=st.select_slider('Hypothetical increase in all pool balances',[0,10,30,50,100],value=30,format_func=lambda v:f'+{v}%',key='sale_increase')
         submitted=st.form_submit_button('Compare execution estimates',type='primary')
+    if submitted and day is None:
+        st.warning('Choose a historical pool date to continue.')
+        return
     if submitted:
         st.session_state['sale_result']=calculate(run_sale,dict(asset=asset,amount=amount,day=day,increase=increase))
     saved=st.session_state.get('sale_result')
