@@ -26,7 +26,7 @@ def render_forecast(history_rows, brief_page=False):
             from datetime import datetime, timezone
             if (datetime.now(timezone.utc).date() - observed).days > 2:
                 st.warning('This saved report is stale. Check the data date and scheduled job.')
-            st.markdown(saved['markdown'])
+            st.markdown(saved['markdown'].replace('$', r'\$'))
     snapshot = Path(__file__).resolve().parent/'reports/prices_latest.json'
     options = ['Bundled historical data','Recent CoinGecko USD data','Upload daily CSV']
     if snapshot.exists():
@@ -71,7 +71,7 @@ def render_forecast(history_rows, brief_page=False):
         st.altair_chart(band+curve,use_container_width=True)
         st.dataframe(frame,hide_index=True)
         v=result['validation']
-        st.caption(f"Expanding-window one-day validation, {v['n']} held-out observations: AR(1) MAE ${v['mae_usd']:.6f}; persistence MAE ${v['persistence_mae_usd']:.6f}. Multi-day intervals are not independently validated.")
+        st.caption(f"Expanding-window one-day validation, {v['n']} held-out observations: AR(1) MAE USD {v['mae_usd']:.6f}; persistence MAE USD {v['persistence_mae_usd']:.6f}. Multi-day intervals are not independently validated.")
     st.download_button('Download forecast facts',json.dumps(facts,indent=2),'forecast-facts.json','application/json')
     if brief_page:
         st.subheader('Generate an English research brief')
@@ -84,7 +84,7 @@ def render_forecast(history_rows, brief_page=False):
                 st.session_state['english_brief']=(facts['assets'],generate_brief(facts))
         saved=st.session_state.get('english_brief')
         if saved and saved[0] == facts['assets']:
-            st.markdown(saved[1])
+            st.markdown(saved[1].replace('$', r'\$'))
             st.download_button('Download English brief',saved[1],'stablecoin-daily-brief.md','text/markdown')
     with st.expander('Model and sources'):
         st.write(facts['assets'][0]['model'])
