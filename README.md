@@ -13,6 +13,8 @@ Built with Python and Streamlit, the application combines historical observation
 - **ABM Sandbox** — Explore redemption pressure and pool depth through an interactive phase diagram.
 - **Interactive Agents** — Configure retail holders, institutions, arbitrageurs, issuer queues, yield-driven holders, and strategic LPs.
 - **Risk Assistant** — Run a deterministic analysis workflow with readable explanations and audit records.
+- **Forecast** — Explore 1-, 3-, and 7-day AR(1) USD price baselines with conditional bootstrap intervals and chronological validation against persistence.
+- **English Daily Brief** — Read a daily sourced price brief, with optional Alibaba Qwen commentary and an explicitly labeled statistical template fallback.
 - **Report Export** — Download scenario results, assumptions, and source metadata as CSV.
 
 ## Data
@@ -58,7 +60,7 @@ It is inspired by financial-agent orchestration research but does not use an LLM
 
 ### Forecasting research
 
-The JEPA section describes a proposed forecasting experiment. No trained forecasting model or predictive service is included.
+The JEPA section describes a proposed forecasting experiment. The separate Forecast workspace provides a fitted AR(1) research baseline. JEPA remains a proposed experiment; it has not been trained.
 
 ## Run Locally
 
@@ -69,3 +71,8 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 streamlit run streamlit_app.py
+
+
+## Daily updates
+
+The GitHub Actions workflow updates the last completed UTC-day USD price snapshots and an English brief at 01:15 UTC (09:15 Asia/Shanghai; scheduling may be delayed). Set the repository Actions secret `DASHSCOPE_API_KEY` to enable Alibaba Qwen generation. Without a working key, the report explicitly identifies itself as template-generated. Data failures retain the previous report, whose date remains visible. See [setup instructions](stablecoin-stress-lab-streamlit/START_HERE.md).
