@@ -1,6 +1,6 @@
 {
   "facts": {
-    "generated_at_utc": "2026-10-15T12:51:02.017601+00:00",
+    "generated_at_utc": "2026-10-15T12:58:24.398534+00:00",
     "assets": [
       {
         "asset": "USDC",
@@ -131,6 +131,6 @@
     "data_age_days": 1,
     "status": "current"
   },
-  "markdown": "# Stablecoin Daily Data Brief \u2014 2026-10-14 UTC\n\n**Template-generated statistical brief; not LLM-generated.**\n\nData as of 2026-10-14; generated at 2026-10-15T12:51:02.017601+00:00.\nLLM status: Provider HTTP 401; check credentials, model access or quota.\n\n## Market snapshot and outlook\n### USDC\nLatest sampled USD price: $0.999685; deviation from $1: -3.15 bps.\nSeven-day AR(1) baseline: $0.999766; conditional 90% model interval: $0.999540\u2013$0.999989.\nOne-day chronological validation (60 observations): AR(1) MAE $0.000079; persistence MAE $0.000075.\n\n### USDT\nLatest sampled USD price: $0.999066; deviation from $1: -9.34 bps.\nSeven-day AR(1) baseline: $0.999338; conditional 90% model interval: $0.998879\u2013$0.999804.\nOne-day chronological validation (60 observations): AR(1) MAE $0.000139; persistence MAE $0.000132.\n\n## Limitations\nDaily sampled USD prices only; no current news, reserves or liquidity feed. Multi-day intervals are not independently validated and are not calibrated depeg probabilities. This research baseline does not establish investment performance.\n\n## Sources\n- https://api.coingecko.com/api/v3/coins/tether/market_chart?vs_currency=usd&days=90\n- https://api.coingecko.com/api/v3/coins/usd-coin/market_chart?vs_currency=usd&days=90",
-  "llm_status": "Provider HTTP 401; check credentials, model access or quota."
+  "markdown": "# Stablecoin Daily Data Brief \u2014 2026-10-14 UTC\n\n**Template-generated statistical brief; not LLM-generated.**\n\nData as of 2026-10-14; generated at 2026-10-15T12:58:24.398534+00:00.\nLLM status: Set DASHSCOPE_API_KEY on the server before generating a brief.\n\n## Market snapshot and outlook\n### USDC\nLatest sampled USD price: $0.999685; deviation from $1: -3.15 bps.\nSeven-day AR(1) baseline: $0.999766; conditional 90% model interval: $0.999540\u2013$0.999989.\nOne-day chronological validation (60 observations): AR(1) MAE $0.000079; persistence MAE $0.000075.\n\n### USDT\nLatest sampled USD price: $0.999066; deviation from $1: -9.34 bps.\nSeven-day AR(1) baseline: $0.999338; conditional 90% model interval: $0.998879\u2013$0.999804.\nOne-day chronological validation (60 observations): AR(1) MAE $0.000139; persistence MAE $0.000132.\n\n## Limitations\nDaily sampled USD prices only; no current news, reserves or liquidity feed. Multi-day intervals are not independently validated and are not calibrated depeg probabilities. This research baseline does not establish investment performance.\n\n## Sources\n- https://api.coingecko.com/api/v3/coins/tether/market_chart?vs_currency=usd&days=90\n- https://api.coingecko.com/api/v3/coins/usd-coin/market_chart?vs_currency=usd&days=90",
+  "llm_status": "Set DASHSCOPE_API_KEY on the server before generating a brief."
 }
