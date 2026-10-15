@@ -33,5 +33,6 @@ jobs:
           git add '**/reports/*.json' '**/reports/*.md'
           if ! git diff --cached --quiet; then
             git commit -m "Update English stablecoin daily brief"
-            git push
+            git pull --rebase origin "${GITHUB_REF_NAME:-main}"
+            git push origin "HEAD:${GITHUB_REF_NAME:-main}"
           fi
