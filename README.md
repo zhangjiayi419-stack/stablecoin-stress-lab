@@ -1,78 +1,56 @@
 # Stablecoin Stress Lab
 
-An interactive research prototype for exploring stablecoin market stress, pool liquidity, and hypothetical participant behavior.
+A research workspace for understanding stablecoin price dislocations and liquidity under stress. The central question is how a hypothetical sale would execute in a recorded Curve 3pool state, and how an explicit change in pool depth changes the estimate.
 
-Built with Python and Streamlit, the application combines historical observations with clearly labeled stress simulations.
+[Open the live Streamlit application](https://stablecoin-stress-lab-bocqwkh5biv65pbodvlaqz.streamlit.app/)
 
-## Features
+## Four workspaces
 
-- **Portfolio Stress Check** — Enter USDC and USDT holdings and explore hypothetical mark losses.
-- **Scenario Presets** — Explore reserve freezes, redemption pressure with LP withdrawals, and interest-rate shocks.
-- **Historical Replay** — Compare independent USDC/USD and USDT/USD price observations.
-- **Pool & Slippage** — Estimate USDC-to-USDT execution using sourced historical Curve 3pool snapshots.
-- **ABM Sandbox** — Explore redemption pressure and pool depth through an interactive phase diagram.
-- **Interactive Agents** — Configure retail holders, institutions, arbitrageurs, issuer queues, yield-driven holders, and strategic LPs.
-- **Risk Assistant** — Run a deterministic analysis workflow with readable explanations and audit records.
-- **Forecast** — Explore 1-, 3-, and 7-day AR(1) USD price baselines with conditional bootstrap intervals and chronological validation against persistence.
-- **English Daily Brief** — Read a daily sourced price brief, with optional Alibaba Qwen commentary and an explicitly labeled statistical template fallback.
-- **Report Export** — Download scenario results, assumptions, and source metadata as CSV.
+| Workspace | Research question | Tools |
+| --- | --- | --- |
+| Overview | What do the latest observations show? | Dated USD snapshots, 30-day deviation chart, English daily brief and a guided entry point |
+| Historical Research | What happened during a stress event? | Three curated cases, daily USD prices, sparse pool-composition observations and source trails |
+| Liquidity Stress Test | How does a sale or explicit shock change the model output? | USDC/USDT sale estimates, proportional liquidity counterfactuals, holdings scenarios and optional participant sensitivity experiments |
+| Models & Validation | What evidence supports the estimate? | Chronological AR(1) vs persistence evaluation, model specifications, validation gaps, provenance and research roadmap |
 
-## Data
+The interface separates observed data, estimates conditional on historical pool states, and hypothetical scenarios. Advanced controls and raw exports are available without dominating the beginner workflow.
 
-The project includes:
+## Run locally
 
-- Historical USDC and USDT USD price observations aggregated by UTC day.
-- Sparse Ethereum Curve 3pool snapshots with recorded block identifiers and timestamps.
-- Curated references for selected market stress events.
-
-Data provenance is documented in:
-
-- `data/manifest.json`
-- `data/processed/curve_3pool_manifest.json`
-- `data/processed/macro_event_sources.csv`
-
-Historical prices and pool snapshots may differ in observation time. Daily sampled highs and lows are not exchange OHLC data.
-
-## Models
-
-### Pool execution
-
-A numerical Curve StableSwap solver estimates trade output, fees, and price impact from historical pool balances and parameters.
-
-### Market participant simulation
-
-A discrete hourly model represents:
-
-- Finite retail selling pressure.
-- Institutional redemption requests.
-- Capital-constrained arbitrage.
-- Issuer processing delays and cash availability.
-- Yield-driven redemptions.
-- Risk-sensitive liquidity withdrawals.
-
-Optional Treasury-token scenarios introduce hypothetical reserve freezes, collateral impairment, interest-rate changes, and duration exposure.
-
-### Risk analysis workflow
-
-The Risk Assistant coordinates data checks, numerical calculations, interpretation checks, and template-based reporting.
-
-It is inspired by financial-agent orchestration research but does not use an LLM or execute trades.
-
-### Forecasting research
-
-The JEPA section describes a proposed forecasting experiment. The separate Forecast workspace provides a fitted AR(1) research baseline. JEPA remains a proposed experiment; it has not been trained.
-
-## Run Locally
-
-Python 3.10 or newer is required.
+Python 3.10 or newer is required. From the repository root:
 
 ```bash
+cd stablecoin-stress-lab-streamlit
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 streamlit run streamlit_app.py
+```
 
+## Data and interpretation
 
-## Daily updates
+Recent USD observations use CoinGecko, with the last sampled observation in each completed UTC day. The bundled historical USD series uses hourly observations aggregated by UTC day; sampled lows and daily last observations are different measures. Neither is exchange OHLC.
 
-The GitHub Actions workflow updates the last completed UTC-day USD price snapshots and an English brief at 01:15 UTC (09:15 Asia/Shanghai; scheduling may be delayed). Set the repository Actions secret `DASHSCOPE_API_KEY` to enable Alibaba Qwen generation. Without a working key, the report explicitly identifies itself as template-generated. Data failures retain the previous report, whose date remains visible. See [setup instructions](stablecoin-stress-lab-streamlit/START_HERE.md).
+The 73 stored Ethereum Curve 3pool snapshots carry actual block timestamps and source metadata. Missing dates are not interpolated. Pool balances are token quantities, not dollar-valued reserves. Pool-block times and daily USD prices are not synchronized.
+
+## Models and evidence
+
+- **Execution:** a floating-point three-token StableSwap solver, with recorded A, balances and fees. Numerical checks cover gross-output invariant preservation, fee arithmetic, scaling and trade-size/depth sensitivity. Agreement with archived contract `get_dy` outputs and realized transactions remains unvalidated.
+- **Scenarios:** rule-based holder cohorts, issuer processing, arbitrage and liquidity withdrawals. Parameters are explicit and uncalibrated. USDC/USDT holdings paths combine independent token simulations, not a joint market model.
+- **Forecast research:** a fitted AR(1) baseline with one-day expanding-window evaluation against persistence. Conditional 90% residual-bootstrap intervals omit parameter uncertainty; multi-day coverage has not been independently validated. No predictive superiority is assumed.
+- **JEPA:** a research proposal, not a trained or deployed model.
+
+## Daily English brief
+
+GitHub Actions refreshes the saved price snapshot and brief at 01:15 UTC (09:15 Asia/Shanghai; scheduling may be delayed). Configure `DASHSCOPE_API_KEY` in repository Actions secrets for optional Alibaba Qwen commentary. When unavailable, the report explicitly uses a deterministic English statistical template. Failed market-data updates preserve the previous dated report.
+
+The public app reads saved reports. Visitors cannot trigger paid model calls with the owner's credentials. Setup details are in [START_HERE.md](stablecoin-stress-lab-streamlit/START_HERE.md).
+
+## Checks
+
+```bash
+cd stablecoin-stress-lab-streamlit
+python -m unittest discover -s tests -v
+```
+
+Research prototype. The application does not execute trades, estimate a calibrated probability of safety, or provide statistical VaR. Scenario losses, original-pool sale estimates and historical price observations have distinct meanings.
