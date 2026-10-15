@@ -1,6 +1,6 @@
-# Stablecoin Stress Lab — Forecast + English Daily Brief
+# Stablecoin Stress Lab — Research Workspace
 
-Stablecoin Stress Lab 的 Forecast 和英文日报模块。
+四个工作区：Overview、Historical Research、Liquidity Stress Test、Models & Validation。按“观察 → 研究 → 实验 → 验证”使用。
 
 ## 本地密钥配置
 
@@ -17,11 +17,11 @@ pip install -r requirements.txt
 streamlit run streamlit_app.py
 ```
 
-侧边栏新增 Forecast 和 English Daily Brief。原历史回放、滑点、ABM 页面保留。
+Overview 展示最新观察和英文日报；Historical Research 提供三个事件案例；Liquidity Stress Test 提供简化卖出实验、持仓情景及折叠的高级参与者实验；Models & Validation 展示预测基线检验、方法和数据来源。
 
 ## 阿里云 API Key
 
-你提供的地址是 Base URL，不是密钥。请在阿里云百炼控制台的北京地域、对应业务空间创建 API Key，确认该空间可调用 `qwen-plus`；如不同，在环境变量中填写实际模型 ID。
+API Base URL 与 API Key 分别配置。请在阿里云百炼控制台的北京地域、对应业务空间创建 API Key，确认该空间可调用 `qwen-plus`；如不同，在环境变量中填写实际模型 ID。
 
 不要把 Key 放进聊天、Python 源码或 GitHub。以下操作在自己的本机终端完成，输入时不回显：
 
@@ -32,11 +32,10 @@ export DASHSCOPE_API_KEY
 printf '\n'
 export DASHSCOPE_BASE_URL='https://ws-t14q2ha96i9pc4kz.cn-beijing.maas.aliyuncs.com/compatible-mode/v1'
 export DASHSCOPE_MODEL='qwen-plus'
-export ALLOW_MANUAL_LLM=true
-streamlit run streamlit_app.py
+python forecast_brief.py
 ```
 
-仅在本地或私有部署启用手动生成。公开 Streamlit 网站默认关闭付费生成按钮，展示预先生成的日报。
+公开网站展示预先生成的日报。付费 LLM 调用通过定时脚本或本机命令执行，访客不能触发。
 
 客户端以 HTTP POST 请求 `/chat/completions`，通过 `Authorization: Bearer ...` 认证；设置 60 秒超时，错误消息不展示密钥或服务商响应正文。需要有效的对应业务空间 API Key。
 
@@ -52,7 +51,7 @@ streamlit run streamlit_app.py
 python forecast_brief.py
 ```
 
-脚本自动获取 CoinGecko USDC / USDT 最近 90 天美元价格，保留每个完整 UTC 日的最后采样点，计算统计预测和回测指标，调用阿里云写英文研究简报，保存 `reports/latest.json`、`reports/prices_latest.json` 和按观察日期归档的 Markdown。LLM 不可用时，保存明确标注的英文统计模板简报。网站的 English Daily Brief 页面展示最新已保存报告。
+脚本自动获取 CoinGecko USDC / USDT 最近 90 天美元价格，保留每个完整 UTC 日的最后采样点，计算统计预测和回测指标，调用阿里云写英文研究简报，保存 `reports/latest.json`、`reports/prices_latest.json` 和按观察日期归档的 Markdown。LLM 不可用时，保存明确标注的英文统计模板简报。网站的 Overview 页面展示最新已保存报告。
 
 CoinGecko 可能要求 Demo API Key 或限流。如果请求失败，不会伪造新数据或覆盖旧报告。可设置 `COINGECKO_DEMO_API_KEY` 后重试。网页支持导入 CSV；定时脚本只使用在线数据源。价格端点：https://api.coingecko.com/api/v3/coins/tether/market_chart?vs_currency=usd&days=90
 
@@ -80,4 +79,11 @@ CoinGecko 可能要求 Demo API Key 或限流。如果请求失败，不会伪�
 
 ## 已验证与限制
 
-`python3 -m unittest discover -s tests -v`：7 项通过。Python 语法编译通过，原数据可成功计算。实时行情连接已验证；阿里云生成需要有效密钥。部署后的运行状态以 GitHub Actions 和网站界面为准。
+`python3 -m unittest discover -s tests -v`：12 项通过，包括 5 项执行模型数值一致性检查。这些检查不是对历史合约报价的准确性验证。Python 语法编译通过，原数据可成功计算。实时行情连接已验证；阿里云生成需要有效密钥。部署后的运行状态以 GitHub Actions 和网站界面为准。
+
+
+## 使用流程
+
+从 Overview 选择历史案例，在 Historical Research 查看价格和池子组成，再点击 Test a sale at this snapshot，将同一个历史日期带入 Liquidity Stress Test。卖出实验仅需币种、金额和日期，默认对比增加 30% 流动性的假设。完整参数、来源和导出收在展开项中。
+
+持仓情景与卖出实验分别显示；两者不能相加。Models & Validation 展示一步样本外误差、价格不变基线、未完成的校准和链上对照工作。JEPA 仅保留在研究路线图。

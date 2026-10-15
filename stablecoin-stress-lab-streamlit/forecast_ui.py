@@ -1,93 +1,66 @@
+"""Research-only forecast workspace with explicit comparison against persistence."""
 import json
-import os
-from datetime import date
-from pathlib import Path
-import pandas as pd
 import altair as alt
+import pandas as pd
 import streamlit as st
-from forecast_brief import context, forecast, fetch_current, generate_brief
+from forecast_brief import context, forecast, fetch_current
 
-@st.cache_data(ttl=3600, show_spinner=False)
+@st.cache_data(ttl=3600,show_spinner=False)
 def current_prices():
     return fetch_current()
 
 
-def render_forecast(history_rows, brief_page=False):
-    st.title('English Daily Brief' if brief_page else 'Stablecoin Forecast')
-    st.caption('Daily USD price research · statistical baseline · source dates shown explicitly')
-    latest = Path(__file__).resolve().parent/'reports/latest.json'
-    if brief_page and not latest.exists():
-        st.info('No scheduled brief has been saved yet.')
-    if brief_page and latest.exists():
-        with st.expander('Latest scheduled report', expanded=True):
-            saved = json.loads(latest.read_text())
-            st.caption('Generated at '+saved['facts']['generated_at_utc'])
-            observed = date.fromisoformat(saved['facts']['assets'][0]['as_of'])
-            from datetime import datetime, timezone
-            if (datetime.now(timezone.utc).date() - observed).days > 2:
-                st.warning('This saved report is stale. Check the data date and scheduled job.')
-            st.markdown(saved['markdown'].replace('$', r'\$'))
-    snapshot = Path(__file__).resolve().parent/'reports/prices_latest.json'
-    options = ['Bundled historical data','Recent CoinGecko USD data','Upload daily CSV']
-    if snapshot.exists():
-        options.insert(0, 'Latest daily snapshot')
-    source = st.selectbox('Forecast data', options)
-    if source == 'Recent CoinGecko USD data':
-        st.caption('CoinGecko API; latest completed UTC days; cached for one hour.')
-        if st.button('Refresh market data'):
+def render_forecast_research(default_rows):
+    st.subheader('Can the model beat a simple baseline?')
+    st.write('This is an experimental daily-price model. Compare its held-out errors with carrying the last observed price forward before interpreting its outlook.')
+    source=st.selectbox('Evaluation dataset',['Latest saved daily observations','Refresh from CoinGecko','Upload daily CSV'],key='validation_source')
+    rows=default_rows
+    if source=='Refresh from CoinGecko':
+        if st.button('Refresh observations',key='validation_refresh'):
             current_prices.clear()
-        with st.spinner('Fetching USD observations…'):
-            rows = current_prices()
-    elif source == 'Latest daily snapshot':
-        rows = json.loads(snapshot.read_text())
-    elif source == 'Upload daily CSV':
-        uploaded = st.file_uploader('CSV: date_utc, asset (USDC/USDT), close_usd, optional source',type='csv')
-        if uploaded is None:
-            st.info('Upload at least 45 consecutive daily observations per asset.')
+        with st.spinner('Fetching completed UTC days…'):
+            rows=current_prices()
+    elif source=='Upload daily CSV':
+        file=st.file_uploader('Daily USD observations',type=['csv'],help='Columns: date_utc, asset, close_usd. At least 45 consecutive days for USDC and USDT.')
+        if file is None:
+            st.caption('Upload a CSV to begin. No interpolation is performed.')
             return
-        if uploaded.size > 2_000_000:
-            raise ValueError('CSV must be smaller than 2 MB.')
-        rows = pd.read_csv(uploaded).to_dict('records')
-    else:
-        rows = history_rows
-    facts = context(rows)
-    st.caption('Generation time (UTC): '+facts['generated_at_utc'])
-    if facts['status'] == 'historical':
-        st.warning(f"Historical data: latest observation is {facts['data_age_days']} days old. This is not today's market outlook.")
-    st.info('AR(1) baseline with a 90% residual-bootstrap model interval. Intervals may understate stress risk; no calibrated depeg probability is provided.')
-    horizon = st.select_slider('Forecast horizon (days)',options=[1,3,7],value=7)
-    facts['assets'] = [forecast(rows, asset, horizon) for asset in ('USDC','USDT')]
-    for asset in ('USDC','USDT'):
-        result = forecast(rows,asset,horizon)
-        st.subheader(asset+' · as of '+result['as_of']+' UTC')
-        c1,c2,c3 = st.columns(3)
-        c1.metric('Latest observed USD',f"${result['latest_usd']:.6f}")
-        c2.metric('Deviation from $1',f"{result['deviation_bps']:.2f} bps")
-        c3.metric(f'{horizon}-day baseline',f"${result['forecast'][-1]['forecast_usd']:.6f}")
-        frame = pd.DataFrame(result['forecast'])
-        base = alt.Chart(frame).encode(x=alt.X('date_utc:T',title='Forecast date (UTC)'))
-        band = base.mark_area(opacity=.18).encode(y=alt.Y('lower_90:Q',title='USD',scale=alt.Scale(zero=False)),y2='upper_90:Q')
-        curve = base.mark_line(point=True).encode(y='forecast_usd:Q',tooltip=['date_utc','forecast_usd','lower_90','upper_90'])
-        st.altair_chart(band+curve,use_container_width=True)
-        st.dataframe(frame,hide_index=True)
-        v=result['validation']
-        st.caption(f"Expanding-window one-day validation, {v['n']} held-out observations: AR(1) MAE USD {v['mae_usd']:.6f}; persistence MAE USD {v['persistence_mae_usd']:.6f}. Multi-day intervals are not independently validated.")
-    st.download_button('Download forecast facts',json.dumps(facts,indent=2),'forecast-facts.json','application/json')
-    if brief_page:
-        st.subheader('Generate an English research brief')
-        # Public visitors never trigger a paid request using the server owner's key.
-        enabled = os.getenv('ALLOW_MANUAL_LLM','false').lower() == 'true'
-        if not enabled:
-            st.info('Manual generation is disabled. Run the daily job or enable ALLOW_MANUAL_LLM=true for a private local session.')
-        elif st.button('Write English brief with Alibaba Qwen',type='primary'):
-            with st.spinner('Writing an English brief from the displayed data…'):
-                st.session_state['english_brief']=(facts['assets'],generate_brief(facts))
-        saved=st.session_state.get('english_brief')
-        if saved and saved[0] == facts['assets']:
-            st.markdown(saved[1].replace('$', r'\$'))
-            st.download_button('Download English brief',saved[1],'stablecoin-daily-brief.md','text/markdown')
-    with st.expander('Model and sources'):
-        st.write(facts['assets'][0]['model'])
-        st.write('Last 90 observations, minimum 45 consecutive days. Fit uses earlier observations only. Bootstrap: 1,000 paths, fixed seed 419; fitted-parameter uncertainty is omitted.')
-        st.write(facts['scope'])
-        st.write(facts['sources'])
+        if file.size>2_000_000:
+            raise ValueError('Please use a CSV smaller than 2 MB.')
+        rows=pd.read_csv(file).to_dict('records')
+    facts=context(rows)
+    if facts['status']=='historical':
+        st.warning(f"Historical dataset · observations are {facts['data_age_days']} days old. This is not a current outlook.")
+    table=[]
+    for result in facts['assets']:
+        v=result['validation'];relative=100*(1-v['mae_usd']/v['persistence_mae_usd']) if v['persistence_mae_usd'] else None
+        table.append({'Asset':result['asset'],'As of (UTC)':result['as_of'],'Held-out days':v['n'],
+                      'AR(1) MAE (USD)':v['mae_usd'],'Persistence MAE (USD)':v['persistence_mae_usd'],
+                      'Error reduction vs persistence (%)':relative,
+                      'Result':'Lower error' if relative is not None and relative>0 else 'No improvement'})
+    st.dataframe(pd.DataFrame(table),hide_index=True,width='stretch',column_config={
+        'AR(1) MAE (USD)':st.column_config.NumberColumn(format='%.7f'),
+        'Persistence MAE (USD)':st.column_config.NumberColumn(format='%.7f'),
+        'Error reduction vs persistence (%)':st.column_config.NumberColumn(format='%.2f')})
+    st.caption('One-day MAE = mean absolute USD price error. Expanding-window evaluation starts after 30 observations; each fit uses only earlier data. Error reduction below zero means the model did worse. These are descriptive results for this sample, not statistical significance tests.')
+    st.divider()
+    asset=st.selectbox('Inspect asset',['USDC','USDT'],key='forecast_asset')
+    horizon=st.select_slider('Projection horizon (days)',[1,3,7],value=7,key='projection_horizon')
+    result=forecast(rows,asset,horizon)
+    st.caption(f"Model origin: {result['as_of']} UTC · fitted on {result['observations']} daily observations")
+    frame=pd.DataFrame(result['forecast'])
+    frame['utc_date']=frame.date_utc.astype(str)
+    frame['persistence_usd']=result['latest_usd']
+    x=alt.X('date_utc:T',title='Projection date (UTC)',scale=alt.Scale(type='utc'),axis=alt.Axis(format='%b %d'))
+    base=alt.Chart(frame).encode(x=x)
+    band=base.mark_area(color='#2268c8',opacity=.12).encode(y=alt.Y('lower_90:Q',title='USD',scale=alt.Scale(zero=False)),y2='upper_90:Q')
+    curve=base.mark_line(color='#2268c8',point=True).encode(y='forecast_usd:Q',tooltip=[alt.Tooltip('utc_date:N',title='UTC date'),alt.Tooltip('forecast_usd:Q',title='AR(1)',format='.6f'),alt.Tooltip('lower_90:Q',format='.6f'),alt.Tooltip('upper_90:Q',format='.6f')])
+    persistence=base.mark_line(color='#6b7280',strokeDash=[5,4]).encode(y='persistence_usd:Q',tooltip=[alt.Tooltip('persistence_usd:Q',format='.6f')])
+    st.altair_chart((band+curve+persistence).properties(height=300),width='stretch')
+    st.caption('Blue: AR(1) · shaded: conditional 90% residual-bootstrap model interval · dashed: persistence. Multi-day intervals have not been independently validated. They are not calibrated depeg probabilities.')
+    with st.expander('Specification, projection table & reproducible export'):
+        st.write(result['model'])
+        st.write('Minimum 45 consecutive daily observations; maximum 90. Coefficient constrained to [-0.98, 0.98]. Residual bootstrap: 1,000 paths, fixed seed 419. Parameter uncertainty, liquidity shocks and issuer fundamentals are excluded.')
+        st.dataframe(frame,hide_index=True,width='stretch')
+        payload=dict(facts,inspected_projection=result)
+        st.download_button('Download evaluation and projection',json.dumps(payload,indent=2),'forecast-validation.json','application/json')
