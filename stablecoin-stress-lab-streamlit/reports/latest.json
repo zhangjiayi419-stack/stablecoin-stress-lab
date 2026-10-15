@@ -1,0 +1,136 @@
+{
+  "facts": {
+    "generated_at_utc": "2026-10-15T12:51:02.017601+00:00",
+    "assets": [
+      {
+        "asset": "USDC",
+        "as_of": "2026-10-14",
+        "observations": 90,
+        "latest_usd": 0.9996854401191778,
+        "deviation_bps": -3.14559880822185,
+        "model": "AR(1), phi constrained to [-0.98, 0.98], last 90 daily USD observations",
+        "phi": 0.7497749695212341,
+        "forecast": [
+          {
+            "date_utc": "2026-10-15",
+            "forecast_usd": 0.9997088293565005,
+            "lower_90": 0.99953699532481,
+            "upper_90": 0.9998251777969477
+          },
+          {
+            "date_utc": "2026-10-16",
+            "forecast_usd": 0.9997263660212012,
+            "lower_90": 0.9995262748272595,
+            "upper_90": 0.9998934950398916
+          },
+          {
+            "date_utc": "2026-10-17",
+            "forecast_usd": 0.9997395145734428,
+            "lower_90": 0.9995359746208767,
+            "upper_90": 0.9999186355963287
+          },
+          {
+            "date_utc": "2026-10-18",
+            "forecast_usd": 0.9997493730287988,
+            "lower_90": 0.9995299388693628,
+            "upper_90": 0.999948152919219
+          },
+          {
+            "date_utc": "2026-10-19",
+            "forecast_usd": 0.999756764651863,
+            "lower_90": 0.9995415384013412,
+            "upper_90": 0.9999593236507529
+          },
+          {
+            "date_utc": "2026-10-20",
+            "forecast_usd": 0.9997623067058207,
+            "lower_90": 0.9995393194340542,
+            "upper_90": 0.9999859518602164
+          },
+          {
+            "date_utc": "2026-10-21",
+            "forecast_usd": 0.9997664619991579,
+            "lower_90": 0.9995397272218204,
+            "upper_90": 0.9999886794671291
+          }
+        ],
+        "validation": {
+          "horizon_days": 1,
+          "n": 60,
+          "mae_usd": 7.903616488408686e-05,
+          "persistence_mae_usd": 7.505166574478342e-05
+        },
+        "limitations": "90% residual-bootstrap model interval, conditional on fitted parameters; not calibrated depeg probabilities. Regime changes, liquidity and issuer fundamentals are excluded."
+      },
+      {
+        "asset": "USDT",
+        "as_of": "2026-10-14",
+        "observations": 90,
+        "latest_usd": 0.999066126821788,
+        "deviation_bps": -9.338731782120302,
+        "model": "AR(1), phi constrained to [-0.98, 0.98], last 90 daily USD observations",
+        "phi": 0.878247984552622,
+        "forecast": [
+          {
+            "date_utc": "2026-10-15",
+            "forecast_usd": 0.9991216667819507,
+            "lower_90": 0.9988380959615234,
+            "upper_90": 0.999377100146085
+          },
+          {
+            "date_utc": "2026-10-16",
+            "forecast_usd": 0.9991704446400257,
+            "lower_90": 0.9988263101145564,
+            "upper_90": 0.9995030794385684
+          },
+          {
+            "date_utc": "2026-10-17",
+            "forecast_usd": 0.9992132836955709,
+            "lower_90": 0.9988390210690715,
+            "upper_90": 0.9995932660698562
+          },
+          {
+            "date_utc": "2026-10-18",
+            "forecast_usd": 0.9992509070097637,
+            "lower_90": 0.998817261366798,
+            "upper_90": 0.9996965729552186
+          },
+          {
+            "date_utc": "2026-10-19",
+            "forecast_usd": 0.9992839496096256,
+            "lower_90": 0.9988729414385938,
+            "upper_90": 0.9997337367322148
+          },
+          {
+            "date_utc": "2026-10-20",
+            "forecast_usd": 0.9993129692063588,
+            "lower_90": 0.9988514484629087,
+            "upper_90": 0.9997892040366781
+          },
+          {
+            "date_utc": "2026-10-21",
+            "forecast_usd": 0.9993384556087022,
+            "lower_90": 0.9988791799967415,
+            "upper_90": 0.9998039136294328
+          }
+        ],
+        "validation": {
+          "horizon_days": 1,
+          "n": 60,
+          "mae_usd": 0.00013852302235154804,
+          "persistence_mae_usd": 0.00013170464283877582
+        },
+        "limitations": "90% residual-bootstrap model interval, conditional on fitted parameters; not calibrated depeg probabilities. Regime changes, liquidity and issuer fundamentals are excluded."
+      }
+    ],
+    "sources": [
+      "https://api.coingecko.com/api/v3/coins/tether/market_chart?vs_currency=usd&days=90",
+      "https://api.coingecko.com/api/v3/coins/usd-coin/market_chart?vs_currency=usd&days=90"
+    ],
+    "scope": "USD daily price snapshots only; no live news, reserves or pool liquidity feed.",
+    "data_age_days": 1,
+    "status": "current"
+  },
+  "markdown": "# Stablecoin Daily Data Brief \u2014 2026-10-14 UTC\n\n**Template-generated statistical brief; not LLM-generated.**\n\nData as of 2026-10-14; generated at 2026-10-15T12:51:02.017601+00:00.\nLLM status: Provider HTTP 401; check credentials, model access or quota.\n\n## Market snapshot and outlook\n### USDC\nLatest sampled USD price: $0.999685; deviation from $1: -3.15 bps.\nSeven-day AR(1) baseline: $0.999766; conditional 90% model interval: $0.999540\u2013$0.999989.\nOne-day chronological validation (60 observations): AR(1) MAE $0.000079; persistence MAE $0.000075.\n\n### USDT\nLatest sampled USD price: $0.999066; deviation from $1: -9.34 bps.\nSeven-day AR(1) baseline: $0.999338; conditional 90% model interval: $0.998879\u2013$0.999804.\nOne-day chronological validation (60 observations): AR(1) MAE $0.000139; persistence MAE $0.000132.\n\n## Limitations\nDaily sampled USD prices only; no current news, reserves or liquidity feed. Multi-day intervals are not independently validated and are not calibrated depeg probabilities. This research baseline does not establish investment performance.\n\n## Sources\n- https://api.coingecko.com/api/v3/coins/tether/market_chart?vs_currency=usd&days=90\n- https://api.coingecko.com/api/v3/coins/usd-coin/market_chart?vs_currency=usd&days=90",
+  "llm_status": "Provider HTTP 401; check credentials, model access or quota."
+}
