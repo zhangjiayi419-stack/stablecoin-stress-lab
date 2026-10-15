@@ -1,0 +1,37 @@
+name: English stablecoin daily brief
+on:
+  schedule:
+    - cron: '15 1 * * *' # 09:15 Asia/Shanghai
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: daily-brief
+  cancel-in-progress: false
+jobs:
+  brief:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fetch prices and write brief
+        env:
+          DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
+          COINGECKO_DEMO_API_KEY: ${{ secrets.COINGECKO_DEMO_API_KEY }}
+          DASHSCOPE_MODEL: qwen-plus
+        run: |
+          if [ -f stablecoin-stress-lab-streamlit/forecast_brief.py ]; then
+            cd stablecoin-stress-lab-streamlit
+          fi
+          python forecast_brief.py
+      - name: Save report for Streamlit
+        run: |
+          git config user.name "stablecoin-report-bot"
+          git config user.email "stablecoin-report-bot@users.noreply.github.com"
+          git add '**/reports/*.json' '**/reports/*.md'
+          if ! git diff --cached --quiet; then
+            git commit -m "Update English stablecoin daily brief"
+            git push
+          fi
