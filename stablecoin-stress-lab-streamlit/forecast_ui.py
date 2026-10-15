@@ -53,10 +53,10 @@ def render_forecast_research(default_rows):
     frame['persistence_usd']=result['latest_usd']
     x=alt.X('date_utc:T',title='Projection date (UTC)',scale=alt.Scale(type='utc'),axis=alt.Axis(format='%b %d'))
     base=alt.Chart(frame).encode(x=x)
-    band=base.mark_area(color='#2268c8',opacity=.12).encode(y=alt.Y('lower_90:Q',title='USD',scale=alt.Scale(zero=False)),y2='upper_90:Q')
-    curve=base.mark_line(color='#2268c8',point=True).encode(y='forecast_usd:Q',tooltip=[alt.Tooltip('utc_date:N',title='UTC date'),alt.Tooltip('forecast_usd:Q',title='AR(1)',format='.6f'),alt.Tooltip('lower_90:Q',format='.6f'),alt.Tooltip('upper_90:Q',format='.6f')])
-    persistence=base.mark_line(color='#6b7280',strokeDash=[5,4]).encode(y='persistence_usd:Q',tooltip=[alt.Tooltip('persistence_usd:Q',format='.6f')])
-    st.altair_chart((band+curve+persistence).properties(height=300),width='stretch')
+    band=base.mark_area(color='#70b7ff',opacity=.18).encode(y=alt.Y('lower_90:Q',title='USD',scale=alt.Scale(zero=False)),y2='upper_90:Q')
+    curve=base.mark_line(color='#70b7ff',point=True).encode(y='forecast_usd:Q',tooltip=[alt.Tooltip('utc_date:N',title='UTC date'),alt.Tooltip('forecast_usd:Q',title='AR(1)',format='.6f'),alt.Tooltip('lower_90:Q',format='.6f'),alt.Tooltip('upper_90:Q',format='.6f')])
+    persistence=base.mark_line(color='#8fa2b9',strokeDash=[5,4]).encode(y='persistence_usd:Q',tooltip=[alt.Tooltip('persistence_usd:Q',format='.6f')])
+    st.altair_chart((band+curve+persistence).properties(height=300),width='stretch',theme=None)
     st.caption('Blue: AR(1) · shaded: conditional 90% residual-bootstrap model interval · dashed: persistence. Multi-day intervals have not been independently validated. They are not calibrated depeg probabilities.')
     with st.expander('Specification, projection table & reproducible export'):
         st.write(result['model'])

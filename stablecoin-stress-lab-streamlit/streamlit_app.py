@@ -15,34 +15,8 @@ from backend.app.services.portfolio import portfolio_stress
 from backend.app.services.agents import simulate_agents, phase_diagram
 
 st.set_page_config(page_title='Stablecoin Stress Lab',page_icon='◈',layout='wide',initial_sidebar_state='expanded')
-st.markdown('''<style>
-:root{--ink:#132b3b;--muted:#647782;--teal:#087f78}
-.stApp{background:#f6f8fa;color:var(--ink)}
-.stMainBlockContainer{max-width:1320px;padding-top:2.4rem;padding-bottom:3rem}
-h1,h2,h3{color:var(--ink);letter-spacing:-.035em}h1{font-weight:650!important;font-size:2.65rem!important;line-height:1.15!important}h2{font-size:1.6rem!important}h3{font-size:1.16rem!important}
-.stMarkdown p{line-height:1.65}.stCaption{color:var(--muted)}
-[data-testid="stSidebar"]{background:#112a3b;color:#edf4f7;border-right:0}
-[data-testid="stSidebar"] *{color:inherit}
-[data-testid="stSidebar"] [data-testid="stCaptionContainer"]{color:#a8c2cf}
-[data-testid="stSidebar"] [data-testid="stRadio"] label{padding:.4rem 0}
-[data-testid="stMetric"]{background:white;border:1px solid #e0e8ed;border-radius:12px;padding:1.1rem 1.2rem}
-[data-testid="stMetricLabel"]{color:#667b88;font-size:.83rem}
-[data-testid="stMetricValue"]{font-size:1.85rem;font-weight:600;letter-spacing:-.03em}
-[data-testid="stVerticalBlockBorderWrapper"]>div{border-color:#e0e8ed!important;border-radius:12px}
-[data-testid="stExpander"]{background:#fff;border-color:#e0e8ed!important}
-.stButton>button[kind="primary"]{background:#087f78;border-color:#087f78;color:white;border-radius:8px}
-.stButton>button{border-radius:8px}
-.eyebrow{font-size:.73rem;letter-spacing:.16em;font-weight:700;color:#087f78;margin-bottom:12px;text-transform:uppercase}
-.deck{color:#627684;font-size:1.06rem;max-width:850px;margin:8px 0 24px;line-height:1.6}
-.data-strip{border-top:1px solid #dce5eb;border-bottom:1px solid #dce5eb;padding:11px 0;margin:0 0 25px;font-size:.78rem;color:#607481;line-height:1.9}
-.brand{font-size:1.1rem;font-weight:650;letter-spacing:-.02em;margin:4px 0 5px}.brand-mark{color:#5bd3b7;font-size:1.6rem}
-.sidebar-kicker{color:#8eafc0;font-size:.68rem;letter-spacing:.17em;margin-top:3px;margin-bottom:28px}
-.card-label{font-size:.73rem;letter-spacing:.1em;color:#69818e;font-weight:650;text-transform:uppercase}
-.badge{display:inline-block;background:#e1f2ed;color:#116855;padding:4px 10px;border-radius:20px;font-size:.73rem;font-weight:650}
-.sidebar-footer{border-top:1px solid #2a4555;margin-top:28px;padding-top:18px;color:#a8c2cf;font-size:.75rem;line-height:1.9}
-@media(max-width:700px){h1{font-size:2rem!important}.stMainBlockContainer{padding-top:1.2rem}[data-testid="stMetricValue"]{font-size:1.5rem}}
-</style>''',unsafe_allow_html=True)
-alt.theme.enable('default')
+from terminal_theme import install_terminal_theme
+install_terminal_theme()
 
 @st.cache_data
 def research():
@@ -87,13 +61,13 @@ def price_chart(frame,height=280,bps=False):
     title='Deviation from USD 1 (bps)' if bps else 'USD price'
     x=alt.X('date_utc:T',title='Observation date (UTC)',scale=alt.Scale(type='utc'),axis=alt.Axis(format='%b %d',grid=False))
     curve=alt.Chart(frame).mark_line(strokeWidth=2.3).encode(x=x,y=alt.Y(field+':Q',title=title,scale=alt.Scale(zero=False)),color=alt.Color('asset:N',scale=alt.Scale(domain=['USDC','USDT'],range=[TOKEN_COLORS['USDC'],TOKEN_COLORS['USDT']]),legend=alt.Legend(title=None,orient='top')),tooltip=[alt.Tooltip('utc_date:N',title='UTC date'),'asset:N',alt.Tooltip('close_usd:Q',title='USD',format='.6f')])
-    baseline=alt.Chart(pd.DataFrame({'reference':[0 if bps else 1]})).mark_rule(color='#98a6b0',strokeDash=[4,4]).encode(y='reference:Q')
-    st.altair_chart((curve+baseline).properties(height=height),width='stretch')
+    baseline=alt.Chart(pd.DataFrame({'reference':[0 if bps else 1]})).mark_rule(color='#788da7',strokeDash=[4,4]).encode(y='reference:Q')
+    st.altair_chart((curve+baseline).properties(height=height),width='stretch',theme=None)
 
 def path_chart(rows,fields,title):
     frame=pd.DataFrame(rows).melt(id_vars=['hour'],value_vars=fields,var_name='series',value_name='value')
     chart=alt.Chart(frame).mark_line(strokeWidth=2.2).encode(x=alt.X('hour:Q',title='Simulation hour'),y=alt.Y('value:Q',title=title,scale=alt.Scale(zero=False)),color=alt.Color('series:N',legend=alt.Legend(title=None,orient='top')),tooltip=['hour:Q','series:N',alt.Tooltip('value:Q',format=',.4f')]).properties(height=280)
-    st.altair_chart(chart,width='stretch')
+    st.altair_chart(chart,width='stretch',theme=None)
 
 history,prices,snapshots=research()
 market_rows,market,market_date,market_age=latest_market(history)
@@ -189,7 +163,7 @@ def historical():
     with right:
         st.subheader('02 · Inspect pool composition')
         chart=alt.Chart(shares).mark_bar(size=28).encode(x=alt.X('date_utc:O',title='Snapshot date (UTC)',axis=alt.Axis(labelAngle=-35)),y=alt.Y('share_pct:Q',stack='zero',title='Share of token quantities (%)'),color=alt.Color('asset:N',scale=alt.Scale(domain=['DAI','USDC','USDT'],range=[TOKEN_COLORS[a] for a in ['DAI','USDC','USDT']]),legend=alt.Legend(title=None,orient='top')),tooltip=['date_utc:N','asset:N',alt.Tooltip('share_pct:Q',format='.2f')]).properties(height=300)
-        st.altair_chart(chart,width='stretch')
+        st.altair_chart(chart,width='stretch',theme=None)
     st.subheader('03 · Connect the evidence to an experiment')
     with st.container(border=True):
         st.write('A larger balance of one token can change the exchange rate and the amount of another token available to sell into. To isolate pool depth, the experiment scales all three balances proportionally while holding composition, amplification and fees fixed.')
@@ -254,7 +228,7 @@ def sale_experiment():
     st.caption('Price impact compares this trade’s average gross exchange rate with the model’s small-trade marginal rate. It is different from deviation against USD 1. Fees are shown separately; gas is excluded.')
     chart=alt.Chart(pd.DataFrame(saved['sensitivity'])).mark_line(point=True,strokeWidth=2.2).encode(x=alt.X('liquidity_increase_pct:Q',title='Hypothetical increase in pool balances (%)'),y=alt.Y('impact_bps:Q',title='Price impact excluding fee (bps)',scale=alt.Scale(zero=False)),tooltip=['liquidity_increase_pct:Q',alt.Tooltip('impact_bps:Q',format='.3f')]).properties(height=250)
     st.subheader('Sensitivity to pool depth')
-    st.altair_chart(chart,width='stretch')
+    st.altair_chart(chart,width='stretch',theme=None)
     with st.expander('Snapshot, assumptions & reproducible export'):
         st.json(snapshot_detail(saved['snapshot']))
         st.write('Balances are supplied as token quantities. The floating-point model approximates Curve execution; integer contract rounding and block-specific exchange-rate adjustments are not reproduced exactly. This is not an executable quote.')
@@ -325,7 +299,7 @@ def holdings_experiment():
         rows=[]
         for name,r in result['comparison'].items():
             rows += [dict(hour=step['hour'],series=name,value=step['pool_implied_usdc_usd_after_agents']) for step in r['steps']]
-        st.altair_chart(alt.Chart(pd.DataFrame(rows)).mark_line().encode(x='hour:Q',y=alt.Y('value:Q',title='Modeled USD quote',scale=alt.Scale(zero=False)),color='series:N').properties(height=260),width='stretch')
+        st.altair_chart(alt.Chart(pd.DataFrame(rows)).mark_line().encode(x='hour:Q',y=alt.Y('value:Q',title='Modeled USD quote',scale=alt.Scale(zero=False)),color='series:N').properties(height=260),width='stretch',theme=None)
     with st.expander('Complete assumptions, source metadata & export'):
         st.json(result['request']);st.json(snapshot_detail(result['snapshot']))
         st.write(result['interpretation'])
@@ -369,7 +343,7 @@ def participant_experiment():
     phase=st.session_state.get('abm_phase')
     if phase and phase[0]==req.model_dump(mode='json'):
         frame=pd.DataFrame(phase[1]['cells'])
-        st.altair_chart(alt.Chart(frame).mark_rect().encode(x=alt.X('redemption_pressure_pct:O',title='Redemption pressure (%)'),y=alt.Y('liquidity_multiplier:O',title='Pool depth multiplier',sort='descending'),color=alt.Color('max_move_from_initial_pct:Q',title='Max move from start (pp)'),tooltip=list(frame.columns)).properties(height=300),width='stretch')
+        st.altair_chart(alt.Chart(frame).mark_rect().encode(x=alt.X('redemption_pressure_pct:O',title='Redemption pressure (%)'),y=alt.Y('liquidity_multiplier:O',title='Pool depth multiplier',sort='descending'),color=alt.Color('max_move_from_initial_pct:Q',title='Max move from start (pp)'),tooltip=list(frame.columns)).properties(height=300),width='stretch',theme=None)
         json_export(phase[1],'participant-sensitivity.json')
 
 

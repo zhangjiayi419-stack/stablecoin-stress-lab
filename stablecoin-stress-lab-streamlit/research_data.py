@@ -6,7 +6,7 @@ import pandas as pd
 from backend.app.services.replay import load_history, load_pool_state
 
 ROOT = Path(__file__).resolve().parent
-TOKEN_COLORS = {'USDC':'#2268c8','USDT':'#13816d','DAI':'#b58a31'}
+TOKEN_COLORS = {'USDC':'#70b7ff','USDT':'#48d5b4','DAI':'#dfb969'}
 CASES = {
     'USDC · March 2023': ('2023-03-09','2023-03-15','2023-03-11','EVT-2023-03-10-svb'),
     'USDT · May 2022': ('2022-05-08','2022-05-16','2022-05-12','EVT-2022-05-09-terra-luna'),
