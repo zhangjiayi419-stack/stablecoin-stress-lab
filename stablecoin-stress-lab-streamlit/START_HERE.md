@@ -1,6 +1,6 @@
 # Stablecoin Stress Lab — Research Workspace
 
-四个工作区：Overview、Historical Research、Liquidity Stress Test、Models & Validation。按“观察 → 研究 → 实验 → 验证”使用。
+五个侧栏入口：Overview、Daily Brief、Historical Research、Liquidity Stress Test、Models & Validation。按“观察 → 研究 → 实验 → 验证”使用。
 
 ## 本地密钥配置
 
@@ -17,7 +17,7 @@ pip install -r requirements.txt
 streamlit run streamlit_app.py
 ```
 
-Overview 展示最新观察和英文日报；Historical Research 提供三个事件案例；Liquidity Stress Test 提供简化卖出实验、持仓情景及折叠的高级参与者实验；Models & Validation 展示预测基线检验、方法和数据来源。
+Overview 展示最新观察；Daily Brief 独立展示英文日报、时间戳、来源和下载；Historical Research 提供三个事件案例；Liquidity Stress Test 提供简化卖出实验、持仓情景及折叠的高级参与者实验；Models & Validation 展示预测基线检验、方法和数据来源。
 
 ## 阿里云 API Key
 
@@ -51,7 +51,7 @@ python forecast_brief.py
 python forecast_brief.py
 ```
 
-脚本自动获取 CoinGecko USDC / USDT 最近 90 天美元价格，保留每个完整 UTC 日的最后采样点，计算统计预测和回测指标，调用阿里云写英文研究简报，保存 `reports/latest.json`、`reports/prices_latest.json` 和按观察日期归档的 Markdown。LLM 不可用时，保存明确标注的英文统计模板简报。网站的 Overview 页面展示最新已保存报告。
+脚本自动获取 CoinGecko USDC / USDT 最近 90 天美元价格，保留每个完整 UTC 日的最后采样点，计算统计预测和回测指标，调用阿里云写英文研究简报，保存 `reports/latest.json`、`reports/prices_latest.json` 和按观察日期归档的 Markdown。LLM 不可用时，保存明确标注的英文统计模板简报。网站侧栏的 Daily Brief 页面展示最新已保存报告。
 
 CoinGecko 可能要求 Demo API Key 或限流。如果请求失败，不会伪造新数据或覆盖旧报告。可设置 `COINGECKO_DEMO_API_KEY` 后重试。网页支持导入 CSV；定时脚本只使用在线数据源。价格端点：https://api.coingecko.com/api/v3/coins/tether/market_chart?vs_currency=usd&days=90
 

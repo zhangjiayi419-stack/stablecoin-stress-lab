@@ -32,7 +32,7 @@ CSS = '''<style>
 :root{color-scheme:dark;--ink:#dce7f5;--muted:#92a5bd;--teal:#48d5b4;--surface:#101a27;--line:#25344a;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace}
 html,body,.stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"]{background:#080e17;color:var(--ink)}
 [data-testid="stHeader"]{background:rgba(8,14,23,.96);border-bottom:1px solid #1d2b3d}
-.stMainBlockContainer{max-width:1380px;padding-top:2rem;padding-bottom:2.7rem}
+.stMainBlockContainer{max-width:1380px;padding-top:3rem;padding-bottom:2.7rem}
 h1,h2,h3{color:#e6eef9;letter-spacing:-.03em}h1{font-weight:600!important;font-size:2.25rem!important;line-height:1.2!important}h2{font-size:1.45rem!important}h3{font-size:1.08rem!important;font-weight:600!important}
 .stMarkdown p{line-height:1.65}.stCaption,[data-testid="stCaptionContainer"]{color:#92a5bd}
 a{color:#82bdff}a:hover{color:#b7d8ff}
@@ -41,7 +41,7 @@ a{color:#82bdff}a:hover{color:#b7d8ff}
 [data-testid="stSidebar"] [data-testid="stRadio"] label{padding:.38rem .15rem}
 [data-testid="stSidebar"] [role="radiogroup"]{gap:.3rem}
 [data-testid="stSidebar"] label:has(input:checked){background:#14263a;border-radius:5px;box-shadow:inset 2px 0 #70b7ff}
-[data-testid="stMetric"]{background:linear-gradient(125deg,#111d2d,#0e1724);border:1px solid #25364d;border-top:2px solid #345270;border-radius:5px;padding:1rem 1.15rem}
+[data-testid="stMetric"]{background:linear-gradient(125deg,#111d2d,#0e1724);border:1px solid #25364d;border-top:2px solid #345270;border-radius:5px;min-height:7.4rem;padding:1rem 1.15rem}
 [data-testid="stMetricLabel"],[data-testid="stMetricLabel"] p{color:#9db0c8;font-size:.76rem;letter-spacing:.035em}
 [data-testid="stMetricValue"],[data-testid="stMetricValue"]>div{color:#e5f0ff;font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:1.75rem;font-weight:500;letter-spacing:-.045em}
 [data-testid="stMetricDelta"]{font-family:var(--mono);font-size:.72rem}
@@ -78,7 +78,7 @@ hr{border-color:#223249!important}
 code{background:#13263b!important;color:#a7d3ff!important}
 #vg-tooltip-element{background:#142238!important;color:#dce7f5!important;border:1px solid #395472!important;box-shadow:0 5px 18px #0008!important}
 #vg-tooltip-element td,#vg-tooltip-element th{color:#dce7f5!important}
-@media(max-width:700px){h1{font-size:1.8rem!important}.stMainBlockContainer{padding-top:1.4rem}[data-testid="stMetricValue"]>div{font-size:1.55rem}.data-strip{font-size:.65rem}}
+@media(max-width:700px){h1{font-size:1.8rem!important}.stMainBlockContainer{padding-top:3rem}[data-testid="stMetricValue"]>div{font-size:1.55rem}.data-strip{font-size:.65rem}}
 </style>'''
 
 

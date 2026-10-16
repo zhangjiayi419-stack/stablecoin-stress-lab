@@ -73,7 +73,7 @@ history,prices,snapshots=research()
 market_rows,market,market_date,market_age=latest_market(history)
 available=sorted({s['timestamp'][:10] for s in snapshots})
 SNAPSHOT_LABELS={'2023-03-11':'USDC stress case','2022-05-12':'USDT stress case','2022-11-09':'FTX stress case'}
-PAGES=['Overview','Historical Research','Liquidity Stress Test','Models & Validation']
+PAGES=['Overview','Daily Brief','Historical Research','Liquidity Stress Test','Models & Validation']
 with st.sidebar:
     st.markdown('<div class="brand-mark">◈</div><div class="brand">Stablecoin Stress Lab</div><div class="sidebar-kicker">LIQUIDITY RESEARCH</div>',unsafe_allow_html=True)
     page=st.radio('Research workspace',PAGES,key='workspace',label_visibility='collapsed')
@@ -108,33 +108,48 @@ def overview():
         st.write('')
         st.button('Start with a simple sale estimate →',on_click=route,args=('Liquidity Stress Test',),width='stretch')
     st.divider()
-    st.subheader('Daily research brief')
-    report=saved_report()
-    if report:
-        facts=report['facts'];data_date=facts['assets'][0]['as_of']
-        method='AI-generated commentary' if report.get('llm_status')=='Generated with Alibaba Qwen' else 'Statistical brief'
-        st.caption(f"{method} · data as of {data_date} UTC · generated {facts['generated_at_utc'][:16].replace('T',' ')} UTC")
-        report_age=(datetime.now(timezone.utc).date()-datetime.fromisoformat(data_date).date()).days
-        if report_age>2:st.warning('The saved brief is stale. Use its observation date, not today’s date, when interpreting it.')
-        if method=='Statistical brief':
-            for a in facts['assets']:
-                st.write(f"**{a['asset']}** was last sampled at **USD {a['latest_usd']:.6f}**, a deviation of **{a['deviation_bps']:+.2f} bps** from USD 1.")
-            st.write('These are price observations, not evidence about issuer reserves or redemption capacity. Assess potential execution costs separately using a sourced pool snapshot.')
-            st.caption('Generated from structured data using a fixed English template. No current-news or reserve analysis is included.')
-        else:
-            body=report['markdown']
-            st.markdown(body.replace('$',r'\$'))
-        with st.expander('Full English brief and source record'):
-            # Operational diagnostics belong in validation, not the visitor's reading flow.
-            body=report['markdown']
-            lines=[line.split('LLM status:')[0] for line in body.splitlines()]
-            st.markdown('\n'.join(lines).replace('$',r'\$'))
-            st.download_button('Download English brief',report['markdown'],'stablecoin-daily-brief.md','text/markdown')
-            json_export(facts,'daily-brief-facts.json','Download underlying facts')
-    else:st.info('No saved brief is available yet. Market observations above remain available.')
+    with st.container(border=True):
+        st.subheader('Daily Brief')
+        st.write('Read the latest English research brief, with dated observations and source records.')
+        st.button('Read Daily Brief →',on_click=route,args=('Daily Brief',))
     with st.container(border=True):
         st.subheader('New to the lab? Follow one question.')
         st.write('1. **Observe** a historical price dislocation.  2. **Inspect** the pool at a recorded block.  3. **Test** a sale and a liquidity assumption.  4. **Check** what the model has and has not validated.')
+
+
+def daily_brief():
+    header('Daily / Research bulletin','Daily Brief','English research commentary based on dated market observations. Read the brief, inspect its sources, or download a copy.')
+    report=saved_report()
+    if not report:
+        st.info('The first daily brief has not been published yet. Market observations are available in Overview.')
+        return
+    facts=report['facts']
+    observed=facts['assets'][0]['as_of']
+    generated=facts['generated_at_utc']
+    method='AI commentary' if report.get('llm_status')=='Generated with Alibaba Qwen' else 'Statistical template'
+    strip(f'OBSERVATIONS: {observed} UTC · GENERATED: {generated[:16].replace("T"," ")} UTC · {method}')
+    age=(datetime.now(timezone.utc).date()-datetime.fromisoformat(observed).date()).days
+    if age>2:
+        st.warning(f'This brief uses observations from {observed} UTC ({age} days old). Treat it as a historical brief; a newer market update has not been published.')
+    st.caption('Scheduled daily at 09:15 Asia/Shanghai. Observation dates and generation times differ; scheduling and source updates may be delayed.')
+    lines=[]
+    for line in report['markdown'].splitlines():
+        line=line.split('LLM status:')[0].rstrip()
+        if line.startswith('# '):
+            line='## '+line[2:]
+        lines.append(line)
+    body='\n'.join(lines)
+    st.download_button('Download English brief',body,'stablecoin-daily-brief-'+observed+'.md','text/markdown',key='daily_brief_download')
+    st.divider()
+    st.markdown(body.replace('$',r'\$'))
+    st.divider()
+    with st.expander('Underlying facts and source record'):
+        st.write('**Data scope:** '+facts.get('scope','Daily USD observations.'))
+        st.write('**Data sources**')
+        for source in facts.get('sources',[]):
+            st.write(source)
+        st.caption('Price observations, statistical projections and hypothetical execution experiments answer different questions. This report does not include a live reserve or news feed.')
+        json_export(facts,'daily-brief-facts-'+observed+'.json','Download underlying facts')
 
 
 def historical():
@@ -409,7 +424,7 @@ def validation():
         st.caption('This roadmap describes future research, not current capabilities.')
 
 try:
-    {'Overview':overview,'Historical Research':historical,'Liquidity Stress Test':stress_test,'Models & Validation':validation}[page]()
+    {'Overview':overview,'Daily Brief':daily_brief,'Historical Research':historical,'Liquidity Stress Test':stress_test,'Models & Validation':validation}[page]()
 except (ValueError,LookupError,KeyError,OSError) as exc:
     st.error('This analysis could not be completed. Check the selected data and inputs.')
     with st.expander('Analysis details'):st.write(str(exc))
