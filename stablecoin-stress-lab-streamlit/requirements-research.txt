@@ -1,0 +1,4 @@
+# Offline research environment only; not loaded by Streamlit.
+-r requirements.txt
+chronos-forecasting==2.3.2
+torch>=2.2,<3

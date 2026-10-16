@@ -80,6 +80,8 @@ def render_mechanism_lab():
                     bar.progress(1.)
                     status.update(label='Stress test complete',state='complete',expanded=False)
                 st.session_state['connected_result']=result
+                from experiment_journal import record
+                record('Connected mechanism test',dict(config=c,positions=positions),result)
             except (ValueError,TypeError) as exc:
                 st.error(str(exc));st.session_state.pop('connected_result',None)
         result=st.session_state.get('connected_result')

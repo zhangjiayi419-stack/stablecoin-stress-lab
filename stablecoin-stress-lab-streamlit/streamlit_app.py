@@ -33,7 +33,11 @@ def calculate(fn,request):
     if not lock.acquire(False):raise ValueError('The research engine is busy. Please try again shortly.')
     try:
         times.append(now)
-        return fn(request)
+        result=fn(request)
+        from experiment_journal import record
+        submitted=request.model_dump(mode='json') if hasattr(request,'model_dump') else request
+        record(fn.__name__.replace('_',' ').title(),submitted,result)
+        return result
     finally:lock.release()
 
 def route(page):
@@ -73,7 +77,7 @@ history,prices,snapshots=research()
 market_rows,market,market_date,market_age=latest_market(history)
 available=sorted({s['timestamp'][:10] for s in snapshots})
 SNAPSHOT_LABELS={'2023-03-11':'USDC stress case','2022-05-12':'USDT stress case','2022-11-09':'FTX stress case'}
-PAGES=['Overview','Daily Brief','Historical Research','Liquidity Stress Test','Mechanism Lab','Models & Validation']
+PAGES=['Overview','Daily Brief','Forecast Lab','Historical Research','Liquidity Stress Test','Mechanism Lab','Experiment Journal','Models & Validation']
 with st.sidebar:
     st.markdown('<div class="brand-mark">◈</div><div class="brand">Stablecoin Stress Lab</div><div class="sidebar-kicker">LIQUIDITY RESEARCH</div>',unsafe_allow_html=True)
     page=st.radio('Research workspace',PAGES,key='workspace',label_visibility='collapsed')
@@ -82,7 +86,9 @@ with st.sidebar:
 
 
 def overview():
-    header('01 / Market context','Stablecoins under stress.','Understand the observations. Explore liquidity mechanisms. Test a clearly defined hypothesis.')
+    from home_ui import render_cover
+    render_cover(route)
+    st.subheader('Market context')
     strip(f"USD data: {market_date} UTC · {'Recent daily snapshot' if market_age<=2 else 'Historical snapshot — refresh required'} · CoinGecko · Latest completed UTC day, not a live trading feed")
     if market_age>2:st.warning(f'The saved market snapshot is {market_age} days old. Treat the figures below as historical context.')
     cols=st.columns(3)
@@ -391,6 +397,14 @@ def mechanism_lab():
     render_mechanism_lab()
 
 
+def forecast_lab():
+    from forecast_lab_ui import render_forecast_lab
+    render_forecast_lab(market_rows)
+
+def journal():
+    from experiment_journal import render_journal
+    render_journal()
+
 def validation():
     header('04 / Evidence standards','Know what the model can support.','Compare forecast baselines, inspect model assumptions and trace the underlying data. See which results have been checked and which remain research hypotheses.')
     forecast_tab,execution_tab,data_tab,roadmap_tab=st.tabs(['Forecast validation','Execution & scenario models','Data & provenance','Research roadmap'])
@@ -399,6 +413,7 @@ def validation():
         render_forecast_research(market_rows)
     with execution_tab:
         st.subheader('Validation status')
+        st.write('Forecast Lab compares four fitted baselines and matching saved Chronos-2 inference on shared chronological origins. Co-TSFA is an untrained research proposal. Experiment Journal records session-specific parameters and outputs.')
         table=[
             {'Component':'Curve execution model','Evidence available':'Historical balances, A, fee and block metadata; numerical consistency checks','What remains open':'Contract get_dy / realized-transaction benchmark, token-rate precision and integer rounding','Status':'Approximation'},
             {'Component':'Rule-based participant model','Evidence available':'Explicit cohort rules, reproducible parameters and sensitivity experiments','What remains open':'Calibration to observed trading/redemption flows and held-out event testing','Status':'Uncalibrated'},
@@ -442,7 +457,7 @@ def validation():
         st.caption('This roadmap describes future research, not current capabilities.')
 
 try:
-    {'Overview':overview,'Daily Brief':daily_brief,'Historical Research':historical,'Liquidity Stress Test':stress_test,'Mechanism Lab':mechanism_lab,'Models & Validation':validation}[page]()
+    {'Overview':overview,'Daily Brief':daily_brief,'Forecast Lab':forecast_lab,'Historical Research':historical,'Liquidity Stress Test':stress_test,'Mechanism Lab':mechanism_lab,'Experiment Journal':journal,'Models & Validation':validation}[page]()
 except (ValueError,LookupError,KeyError,OSError) as exc:
     st.error('This analysis could not be completed. Check the selected data and inputs.')
     with st.expander('Analysis details'):st.write(str(exc))
