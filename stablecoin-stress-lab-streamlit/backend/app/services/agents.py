@@ -117,7 +117,7 @@ def simulate_agents(request: AgentExperimentRequest) -> dict:
         volatility = abs(current_price-(previous_price if previous_price is not None else current_price))
         risk_bps = (abs(1-current_price)+volatility)*10000
         withdrawal = 0.0
-        if request.treasury_protocol_mode and risk_bps > request.lp_risk_threshold_bps:
+        if risk_bps > request.lp_risk_threshold_bps:
             remaining_budget = request.lp_max_withdrawal_pct/100-lp_removed
             withdrawal = max(0,remaining_budget) * request.lp_response_pct/100 * min(1,(risk_bps-request.lp_risk_threshold_bps)/1000)
             if withdrawal > 0:
