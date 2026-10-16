@@ -51,6 +51,7 @@ def render_forecast_lab(default_rows):
             fig.add_trace(go.Scatter(x=g.date_utc,y=g.deviation_bps,name=model,mode='lines+markers'))
         fig.add_hline(y=0,line_dash='dash',line_color='#8193aa')
         fig.update_layout(xaxis_title='Projected date (UTC)',yaxis_title='Deviation from USD 1 (bps)')
+        fig.update_xaxes(type='category')
         show(fig,key='model_projection')
         st.caption('Point projections, not event probabilities. Rolling mean uses the last seven observed values as a fixed forecast; AR(1) and boosting recurse forward. The same fixed settings are used at every origin; no hyperparameters are selected on this evaluation set.')
     with b:
