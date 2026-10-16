@@ -1,6 +1,7 @@
 """Research-only forecast workspace with explicit comparison against persistence."""
 import json
-import altair as alt
+import plotly.graph_objects as go
+from terminal_charts import show
 import pandas as pd
 import streamlit as st
 from forecast_brief import context, forecast, fetch_current
@@ -51,12 +52,14 @@ def render_forecast_research(default_rows):
     frame=pd.DataFrame(result['forecast'])
     frame['utc_date']=frame.date_utc.astype(str)
     frame['persistence_usd']=result['latest_usd']
-    x=alt.X('date_utc:T',title='Projection date (UTC)',scale=alt.Scale(type='utc'),axis=alt.Axis(format='%b %d'))
-    base=alt.Chart(frame).encode(x=x)
-    band=base.mark_area(color='#70b7ff',opacity=.18).encode(y=alt.Y('lower_90:Q',title='USD',scale=alt.Scale(zero=False)),y2='upper_90:Q')
-    curve=base.mark_line(color='#70b7ff',point=True).encode(y='forecast_usd:Q',tooltip=[alt.Tooltip('utc_date:N',title='UTC date'),alt.Tooltip('forecast_usd:Q',title='AR(1)',format='.6f'),alt.Tooltip('lower_90:Q',format='.6f'),alt.Tooltip('upper_90:Q',format='.6f')])
-    persistence=base.mark_line(color='#8fa2b9',strokeDash=[5,4]).encode(y='persistence_usd:Q',tooltip=[alt.Tooltip('persistence_usd:Q',format='.6f')])
-    st.altair_chart((band+curve+persistence).properties(height=300),width='stretch',theme=None)
+    fig=go.Figure()
+    fig.add_trace(go.Scatter(x=frame.date_utc,y=frame.lower_90,line=dict(width=0),showlegend=False,hoverinfo='skip'))
+    fig.add_trace(go.Scatter(x=frame.date_utc,y=frame.upper_90,line=dict(width=0),fill='tonexty',fillcolor='rgba(112,183,255,.18)',name='Conditional 90% interval'))
+    fig.add_trace(go.Scatter(x=frame.date_utc,y=frame.forecast_usd,mode='lines+markers',name='AR(1)',line=dict(color='#70b7ff')))
+    fig.add_trace(go.Scatter(x=frame.date_utc,y=frame.persistence_usd,name='Persistence',line=dict(color='#8fa2b9',dash='dash')))
+    fig.update_layout(xaxis_title='Projection date (UTC)',yaxis_title='USD')
+    fig.update_yaxes(tickformat='.6f')
+    show(fig,300)
     st.caption('Blue: AR(1) · shaded: conditional 90% residual-bootstrap model interval · dashed: persistence. Multi-day intervals have not been independently validated. They are not calibrated depeg probabilities.')
     with st.expander('Specification, projection table & reproducible export'):
         st.write(result['model'])

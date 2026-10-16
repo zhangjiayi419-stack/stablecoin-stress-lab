@@ -49,7 +49,7 @@ a{color:#82bdff}a:hover{color:#b7d8ff}
 [data-testid="stForm"]{background:#0d1724;border-color:#283b52;border-radius:5px;padding:1.2rem}
 [data-testid="stExpander"]{background:#0d1724;border-color:#25344a!important;border-radius:5px}
 [data-testid="stExpander"] summary:hover{color:#8bc3ff}
-[data-testid="stVegaLiteChart"]{background:#0d1520;border:1px solid #213148;border-radius:5px;padding:10px}
+[data-testid="stPlotlyChart"],[data-testid="stVegaLiteChart"]{background:#0d1520;border:1px solid #213148;border-radius:5px;padding:10px}
 [data-testid="stDataFrame"]{border:1px solid #25344a;border-radius:5px;overflow:hidden}
 [data-baseweb="tab-list"]{border-bottom-color:#25344a;gap:1.2rem}
 [data-baseweb="tab"]{color:#92a5bd;font-size:.82rem}

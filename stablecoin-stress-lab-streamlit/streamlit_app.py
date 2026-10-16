@@ -5,7 +5,8 @@ import json
 import time
 from datetime import datetime, timezone
 from threading import BoundedSemaphore
-import altair as alt
+import plotly.graph_objects as go
+from terminal_charts import show as show_chart, lines as line_chart
 import pandas as pd
 import streamlit as st
 from research_data import (ROOT,TOKEN_COLORS,CASES,load_research,latest_market,saved_report,event_frames,snapshot_detail)
@@ -55,25 +56,24 @@ def json_export(result,name,label='Download reproducible experiment'):
 
 def price_chart(frame,height=280,bps=False):
     frame=frame.copy()
-    frame['utc_date']=frame.date_utc.astype(str)
     frame['deviation_bps']=(frame.close_usd-1)*10000
     field='deviation_bps' if bps else 'close_usd'
-    title='Deviation from USD 1 (bps)' if bps else 'USD price'
-    x=alt.X('date_utc:T',title='Observation date (UTC)',scale=alt.Scale(type='utc'),axis=alt.Axis(format='%b %d',grid=False))
-    curve=alt.Chart(frame).mark_line(strokeWidth=2.3).encode(x=x,y=alt.Y(field+':Q',title=title,scale=alt.Scale(zero=False)),color=alt.Color('asset:N',scale=alt.Scale(domain=['USDC','USDT'],range=[TOKEN_COLORS['USDC'],TOKEN_COLORS['USDT']]),legend=alt.Legend(title=None,orient='top')),tooltip=[alt.Tooltip('utc_date:N',title='UTC date'),'asset:N',alt.Tooltip('close_usd:Q',title='USD',format='.6f')])
-    baseline=alt.Chart(pd.DataFrame({'reference':[0 if bps else 1]})).mark_rule(color='#788da7',strokeDash=[4,4]).encode(y='reference:Q')
-    st.altair_chart((curve+baseline).properties(height=height),width='stretch',theme=None)
+    fig=go.Figure()
+    for asset,g in frame.groupby('asset',sort=False):
+        fig.add_trace(go.Scatter(x=g.date_utc,y=g[field],name=asset,mode='lines',line=dict(color=TOKEN_COLORS[asset],width=2.3)))
+    fig.add_hline(y=0 if bps else 1,line_dash='dash',line_color='#788da7')
+    fig.update_layout(xaxis_title='Observation date (UTC)',yaxis_title='Deviation from USD 1 (bps)' if bps else 'USD price')
+    fig.update_yaxes(tickformat='.2f' if bps else '.4f')
+    show_chart(fig,height)
 
 def path_chart(rows,fields,title):
-    frame=pd.DataFrame(rows).melt(id_vars=['hour'],value_vars=fields,var_name='series',value_name='value')
-    chart=alt.Chart(frame).mark_line(strokeWidth=2.2).encode(x=alt.X('hour:Q',title='Simulation hour'),y=alt.Y('value:Q',title=title,scale=alt.Scale(zero=False)),color=alt.Color('series:N',legend=alt.Legend(title=None,orient='top')),tooltip=['hour:Q','series:N',alt.Tooltip('value:Q',format=',.4f')]).properties(height=280)
-    st.altair_chart(chart,width='stretch',theme=None)
+    line_chart(pd.DataFrame(rows),'hour',fields,title,'Simulation hour',height=280)
 
 history,prices,snapshots=research()
 market_rows,market,market_date,market_age=latest_market(history)
 available=sorted({s['timestamp'][:10] for s in snapshots})
 SNAPSHOT_LABELS={'2023-03-11':'USDC stress case','2022-05-12':'USDT stress case','2022-11-09':'FTX stress case'}
-PAGES=['Overview','Daily Brief','Historical Research','Liquidity Stress Test','Models & Validation']
+PAGES=['Overview','Daily Brief','Historical Research','Liquidity Stress Test','Mechanism Lab','Models & Validation']
 with st.sidebar:
     st.markdown('<div class="brand-mark">◈</div><div class="brand">Stablecoin Stress Lab</div><div class="sidebar-kicker">LIQUIDITY RESEARCH</div>',unsafe_allow_html=True)
     page=st.radio('Research workspace',PAGES,key='workspace',label_visibility='collapsed')
@@ -177,8 +177,12 @@ def historical():
         price_chart(frame,height=300)
     with right:
         st.subheader('02 · Inspect pool composition')
-        chart=alt.Chart(shares).mark_bar(size=28).encode(x=alt.X('date_utc:O',title='Snapshot date (UTC)',axis=alt.Axis(labelAngle=-35)),y=alt.Y('share_pct:Q',stack='zero',title='Share of token quantities (%)'),color=alt.Color('asset:N',scale=alt.Scale(domain=['DAI','USDC','USDT'],range=[TOKEN_COLORS[a] for a in ['DAI','USDC','USDT']]),legend=alt.Legend(title=None,orient='top')),tooltip=['date_utc:N','asset:N',alt.Tooltip('share_pct:Q',format='.2f')]).properties(height=300)
-        st.altair_chart(chart,width='stretch',theme=None)
+        fig=go.Figure()
+        for token in ['DAI','USDC','USDT']:
+            g=shares[shares.asset==token]
+            fig.add_trace(go.Bar(x=g.date_utc,y=g.share_pct,name=token,marker_color=TOKEN_COLORS[token]))
+        fig.update_layout(barmode='stack',xaxis_title='Snapshot date (UTC)',yaxis_title='Share of token quantities (%)')
+        show_chart(fig,300)
     st.subheader('03 · Connect the evidence to an experiment')
     with st.container(border=True):
         st.write('A larger balance of one token can change the exchange rate and the amount of another token available to sell into. To isolate pool depth, the experiment scales all three balances proportionally while holding composition, amplification and fees fixed.')
@@ -241,9 +245,8 @@ def sale_experiment():
         table.append({'Scenario':label,f'Net {output} received':r['net_output'],f'{output} per {req["asset"]} (net)':r['average_execution_price_net'],'Price impact, fee excluded (%)':r['price_impact_ex_fee_pct'],f'Fee ({output})':r['fee_amount']})
     st.dataframe(pd.DataFrame(table),hide_index=True,width='stretch')
     st.caption('Price impact compares this trade’s average gross exchange rate with the model’s small-trade marginal rate. It is different from deviation against USD 1. Fees are shown separately; gas is excluded.')
-    chart=alt.Chart(pd.DataFrame(saved['sensitivity'])).mark_line(point=True,strokeWidth=2.2).encode(x=alt.X('liquidity_increase_pct:Q',title='Hypothetical increase in pool balances (%)'),y=alt.Y('impact_bps:Q',title='Price impact excluding fee (bps)',scale=alt.Scale(zero=False)),tooltip=['liquidity_increase_pct:Q',alt.Tooltip('impact_bps:Q',format='.3f')]).properties(height=250)
     st.subheader('Sensitivity to pool depth')
-    st.altair_chart(chart,width='stretch',theme=None)
+    line_chart(pd.DataFrame(saved['sensitivity']),'liquidity_increase_pct',['impact_bps'],'Price impact excluding fee (bps)','Hypothetical increase in pool balances (%)',height=250)
     with st.expander('Snapshot, assumptions & reproducible export'):
         st.json(snapshot_detail(saved['snapshot']))
         st.write('Balances are supplied as token quantities. The floating-point model approximates Curve execution; integer contract rounding and block-specific exchange-rate adjustments are not reproduced exactly. This is not an executable quote.')
@@ -290,8 +293,10 @@ def holdings_experiment():
         values['rate_shock_bps']=b.slider('Rate shock (bps; Treasury comparison)',-2000,2000,values['rate_shock_bps'],step=50,key='rate_'+preset)
     req=PortfolioRequest(date=day,usdc_amount=usdc,usdt_amount=usdt,**values)
     if st.button('Run holdings scenario',type='primary'):
-        with st.spinner('Running the explicit scenario…'):
+        with st.status('Running holdings and issuer scenarios…',expanded=True) as status:
+            st.write('Initialize historical pool → simulate holder and issuer flows → aggregate holdings')
             st.session_state['hold_result']=(req.model_dump(mode='json'),calculate(portfolio_stress,req))
+            status.update(label='Holdings scenario complete',state='complete',expanded=False)
     saved=st.session_state.get('hold_result')
     if not saved:return
     if saved[0]!=req.model_dump(mode='json'):
@@ -314,7 +319,8 @@ def holdings_experiment():
         rows=[]
         for name,r in result['comparison'].items():
             rows += [dict(hour=step['hour'],series=name,value=step['pool_implied_usdc_usd_after_agents']) for step in r['steps']]
-        st.altair_chart(alt.Chart(pd.DataFrame(rows)).mark_line().encode(x='hour:Q',y=alt.Y('value:Q',title='Modeled USD quote',scale=alt.Scale(zero=False)),color='series:N').properties(height=260),width='stretch',theme=None)
+        frame=pd.DataFrame(rows).pivot(index='hour',columns='series',values='value').reset_index()
+        line_chart(frame,'hour',list(frame.columns[1:]),'Modeled USD quote',height=260)
     with st.expander('Complete assumptions, source metadata & export'):
         st.json(result['request']);st.json(snapshot_detail(result['snapshot']))
         st.write(result['interpretation'])
@@ -341,11 +347,15 @@ def participant_experiment():
     req=AgentExperimentRequest(date=day,stress_asset=asset,redemption_pressure_pct=pressure,pool_liquidity_multiplier=depth,holder_panic=panic,arbitrage_capital_usd=capital,issuer_delay_hours=delay,lp_max_withdrawal_pct=withdrawal,cash_reserve_ratio_pct=cash,treasury_protocol_mode=treasury,rate_shock_bps=rate,asset_duration_years=duration,frozen_reserve_pct=frozen)
     a,b=st.columns(2)
     if a.button('Run participant experiment'):
-        with st.spinner('Running participant rules…'):
+        with st.status('Simulating participant rules…',expanded=True) as status:
+            st.write('Initialize cohorts → apply trading and redemption rules → assess recovery')
             st.session_state['abm_result']=(req.model_dump(mode='json'),calculate(simulate_agents,req))
+            status.update(label='Participant experiment complete',state='complete',expanded=False)
     if b.button('Compare 42 pressure / depth combinations'):
-        with st.spinner('Building sensitivity grid…'):
+        with st.status('Building 42 pressure / depth scenarios…',expanded=True) as status:
+            st.write('Evaluate independent parameter combinations and collect sensitivity statistics')
             st.session_state['abm_phase']=(req.model_dump(mode='json'),calculate(phase_diagram,req))
+            status.update(label='Sensitivity grid complete',state='complete',expanded=False)
     saved=st.session_state.get('abm_result')
     if saved and saved[0]==req.model_dump(mode='json'):
         result=saved[1]
@@ -358,12 +368,15 @@ def participant_experiment():
     phase=st.session_state.get('abm_phase')
     if phase and phase[0]==req.model_dump(mode='json'):
         frame=pd.DataFrame(phase[1]['cells'])
-        st.altair_chart(alt.Chart(frame).mark_rect().encode(x=alt.X('redemption_pressure_pct:O',title='Redemption pressure (%)'),y=alt.Y('liquidity_multiplier:O',title='Pool depth multiplier',sort='descending'),color=alt.Color('max_move_from_initial_pct:Q',title='Max move from start (pp)'),tooltip=list(frame.columns)).properties(height=300),width='stretch',theme=None)
+        grid=frame.pivot(index='liquidity_multiplier',columns='redemption_pressure_pct',values='max_move_from_initial_pct')
+        fig=go.Figure(go.Heatmap(x=list(grid.columns),y=list(grid.index),z=grid.values,colorscale='Blues',colorbar=dict(title='Move (pp)')))
+        fig.update_layout(xaxis_title='Redemption pressure (%)',yaxis_title='Pool depth multiplier')
+        show_chart(fig,300)
         json_export(phase[1],'participant-sensitivity.json')
 
 
 def stress_test():
-    header('03 / Mechanism experiments','Liquidity stress experiments.','Start with a simple sale estimate or holdings scenario. Advanced participant rules are available when you need to inspect the mechanism.')
+    header('03 / Mechanism experiments','Liquidity stress experiments.','Start with a sale estimate or holdings scenario. Open Mechanism Lab for AMM comparisons, liquidation feedback and block-level recovery.')
     strip('Historical starting conditions + hypothetical assumptions · Model outputs are estimates · No live quotes or trades')
     sale,holdings=st.tabs(['Sell a position','Stress my holdings'])
     with sale:sale_experiment()
@@ -371,6 +384,11 @@ def stress_test():
     st.divider()
     with st.expander('Advanced research · participant dynamics and sensitivity grid'):
         participant_experiment()
+
+
+def mechanism_lab():
+    from mechanism_ui import render_mechanism_lab
+    render_mechanism_lab()
 
 
 def validation():
@@ -424,7 +442,7 @@ def validation():
         st.caption('This roadmap describes future research, not current capabilities.')
 
 try:
-    {'Overview':overview,'Daily Brief':daily_brief,'Historical Research':historical,'Liquidity Stress Test':stress_test,'Models & Validation':validation}[page]()
+    {'Overview':overview,'Daily Brief':daily_brief,'Historical Research':historical,'Liquidity Stress Test':stress_test,'Mechanism Lab':mechanism_lab,'Models & Validation':validation}[page]()
 except (ValueError,LookupError,KeyError,OSError) as exc:
     st.error('This analysis could not be completed. Check the selected data and inputs.')
     with st.expander('Analysis details'):st.write(str(exc))

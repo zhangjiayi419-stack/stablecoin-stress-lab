@@ -2,3 +2,4 @@ streamlit>=1.52,<2
 pandas>=2.2,<3
 altair>=6.0,<7
 pydantic>=2.9,<3
+plotly>=6,<7
