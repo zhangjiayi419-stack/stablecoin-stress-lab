@@ -4,11 +4,12 @@ A research workspace for understanding stablecoin price dislocations and liquidi
 
 [Open the live Streamlit application](https://stablecoin-stress-lab-bocqwkh5biv65pbodvlaqz.streamlit.app/)
 
-## Four workspaces
+## Workspaces
 
 | Workspace | Research question | Tools |
 | --- | --- | --- |
-| Overview | What do the latest observations show? | Dated USD snapshots, 30-day deviation chart, English daily brief and a guided entry point |
+| Overview | What do the latest observations show? | Dated USD snapshots, 30-day deviation chart and a guided entry point |
+| Daily Brief | What does the daily research brief say? | Dedicated English brief, observation and generation timestamps, source records and Markdown / JSON downloads |
 | Historical Research | What happened during a stress event? | Three curated cases, daily USD prices, sparse pool-composition observations and source trails |
 | Liquidity Stress Test | How does a sale or explicit shock change the model output? | USDC/USDT sale estimates, proportional liquidity counterfactuals, holdings scenarios and optional participant sensitivity experiments |
 | Models & Validation | What evidence supports the estimate? | Chronological AR(1) vs persistence evaluation, model specifications, validation gaps, provenance and research roadmap |
