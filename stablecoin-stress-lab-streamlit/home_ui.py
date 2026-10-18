@@ -1,19 +1,54 @@
-"""A concise research cover with an optional illustrative CSS animation."""
+"""Five-block landing page: purpose, evidence, experiment, next step, author."""
+import json
+from pathlib import Path
 import streamlit as st
+ROOT=Path(__file__).resolve().parent
+REPO='https://github.com/zhangjiayi419-stack/stablecoin-stress-lab'
+
+
+def findings():
+    empirical=json.loads((ROOT/'empirical_data/econometric_results.json').read_text())
+    scores=empirical['results']['svb|USDC|1|Bounded ACI']['scores']
+    gb=next(r for r in scores if r['Model']=='Gradient boosting')
+    hourly=json.loads((ROOT/'empirical_data/covariate_results.json').read_text())
+    cov=next(r for r in hourly['results']['USDC']['scores'] if r['Model']=='GB + observed covariates')
+    observations=json.loads((ROOT/'empirical_data/prices_hourly.json').read_text())
+    low=min(r['price_usd'] for r in observations if r['asset']=='USDC' and '2023-03-09'<=r['timestamp']<'2023-03-16')
+    manifest=json.loads((ROOT/'empirical_data/manifest.json').read_text())
+    return dict(low=low,improvement=gb['Improvement_pct'],targets=gb['Targets'],covariate_improvement=cov['Improvement_pct'],solver_error=manifest['maximum_solver_error_bps'],quotes=manifest['contract_quotes'])
 
 
 def render_cover(route):
+    from opening_animation import render_opening
+    render_opening()
     st.markdown('''<style>
-.research-hero{padding:25px 0 10px;border-top:1px solid #25344a}.hero-label{font:11px monospace;letter-spacing:.19em;color:#70b7ff}.hero-title{font-size:clamp(38px,5vw,66px);line-height:1.05;letter-spacing:-.055em;font-weight:650;margin:22px 0;color:#e5edf7;max-width:870px}.hero-description{font-size:17px;line-height:1.6;color:#a6b7cb;max-width:720px;margin-bottom:30px}.mechanism-strip{display:flex;gap:10px;align-items:center;margin:20px 0}.mechanism-node{flex:1;border:1px solid #30445c;background:#101d2d;padding:20px 14px;min-height:100px;animation:research-pulse 12s infinite;color:#b9cee5}.mechanism-node:nth-child(2){animation-delay:3s}.mechanism-node:nth-child(3){animation-delay:6s}.mechanism-node:nth-child(4){animation-delay:9s}.mechanism-node strong{display:block;color:#e5edf7;font-size:14px;margin:8px 0}.mechanism-node small{font:10px monospace;color:#8da7c6}.motion-paused .mechanism-node{animation-play-state:paused}@keyframes research-pulse{0%,24%{border-color:#70b7ff;box-shadow:inset 0 2px #70b7ff;background:#182e46}25%,100%{border-color:#30445c;box-shadow:none;background:#101d2d}}@media(prefers-reduced-motion:reduce){.mechanism-node{animation:none}}@media(max-width:650px){.mechanism-strip{display:grid;grid-template-columns:1fr 1fr}.mechanism-node{min-height:90px}}
-</style><section class="research-hero"><div class="hero-label">01 / STABLECOIN STRESS LAB / RESEARCH WORKSPACE</div><div class="hero-title">Systemic Liquidity &amp;<br>Depeg Contagion Lab</div><div class="hero-description">Empirical dislocation tracking, econometric tail-risk forecasting, and AMM liquidity spiral simulations.</div></section>''',unsafe_allow_html=True)
-    cols=st.columns(3)
-    entries=[('OBSERVE','Explore Markets','Recorded USD prices and historical pool evidence.','Historical Research'),('EVALUATE','Compare Models','Shared test windows, baseline errors and traceable forecasts.','Forecast Lab'),('EXPERIMENT','Run Stress Test','AMM curves, LP exits, liquidation feedback and recovery.','Mechanism Lab')]
-    for col,(label,title,description,page) in zip(cols,entries):
+.research-hero{padding:22px 0 12px;border-top:1px solid #25344a}.hero-label{font:11px monospace;letter-spacing:.16em;color:#70b7ff}.hero-title{font-size:clamp(36px,5vw,64px);line-height:1.08;letter-spacing:-.045em;font-weight:650;margin:18px 0;color:#e5edf7}.hero-description{font-size:19px;line-height:1.55;color:#c1d0df;max-width:800px;margin:0 0 12px}.hero-purpose{font-size:14px;line-height:1.65;color:#91a7be;max-width:800px}.finding-value{font:600 clamp(29px,3vw,42px) monospace;letter-spacing:-.04em;color:#dcecff;margin:8px 0 14px}.finding-label{font:10px monospace;letter-spacing:.12em;color:#83a6c9;text-transform:uppercase}
+</style><section class="research-hero"><div class="hero-label">01 / RESEARCH WORKSPACE</div><h1 class="hero-title">Stablecoin Stress Lab</h1><p class="hero-description">A price near $1 does not mean you can sell at $1.</p><p class="hero-purpose">A research lab for understanding how stablecoin sell-offs strain liquidity, trigger feedback loops, and challenge price forecasts.</p></section>''',unsafe_allow_html=True)
+    st.subheader('Key Findings')
+    f=findings();cols=st.columns(3)
+    cards=[('Observed stress',f"${f['low']:.4f}",'USDC’s sampled low during the March 2023 SVB shock.',f"{f['quotes']} historical contract quotes reproduced within 0.000001 bps."),
+           ('Daily forecasting',f"+{f['improvement']:.1f}%",'Lower MAE than persistence for gradient boosting in the SVB daily evaluation.',f"{f['targets']} shared one-day targets. One event; not a general performance guarantee."),
+           ('Negative results',f"{f['covariate_improvement']:.1f}%",'The onchain-covariate model underperformed persistence in the hourly USDC test.','Unsuccessful models stay in the leaderboard. No results are hidden to improve the ranking.')]
+    for col,(label,value,text,note) in zip(cols,cards):
         with col:
             with st.container(border=True):
-                st.markdown(f'<div class="card-label">{label}</div>',unsafe_allow_html=True)
-                st.subheader(title);st.caption(description)
-                st.button(title+' →',key='cover_'+page,on_click=route,args=(page,),width='stretch')
+                st.markdown(f'<div class="finding-label">{label}</div><div class="finding-value">{value}</div>',unsafe_allow_html=True)
+                st.write(text);st.caption(note)
+    with st.expander('Finding definitions & evidence'):
+        st.write('Observed low: hourly provider samples, March 9–15, 2023; not exchange OHLC. Solver accuracy: maximum absolute relative error over five historical blocks, three sizes and both USDC/USDT directions. Forecast improvement = 100 × (1 − model MAE / persistence MAE); daily and hourly experiments are separate.')
+        st.markdown('[Data and contract benchmark]('+REPO+'/tree/main/stablecoin-stress-lab-streamlit/empirical_data) · [Research methods]('+REPO+'/blob/main/stablecoin-stress-lab-streamlit/EMPIRICAL_RESEARCH.md)')
+    st.subheader('Try the mechanism')
+    st.write('Try it: sell 40% of the pool and watch the quote fall.')
     from impact_animation import render_impact_animation
-    render_impact_animation()
+    render_impact_animation(show_heading=False)
     st.divider()
+    def start_usdc_case():
+        st.session_state['research_case']='USDC · March 2023'
+        st.session_state.pop('case_snapshot',None)
+        route('Historical Research')
+    st.button('Start here: the USDC March 2023 case →',type='primary',on_click=start_usdc_case,width='stretch')
+    with st.expander('New to the lab? Follow one question'):
+        st.markdown('1. **Observe** the March 2023 price dislocation.\n2. **Inspect** the historical pool and its data sources.\n3. **Test** a sale and a liquidity assumption.\n4. **Check** model errors, validation and limitations.')
+    st.subheader('About')
+    st.markdown('**JIAYI ZHANG** · University of Macau\n\nA reproducible stablecoin liquidity and forecasting research project.')
+    st.markdown('[GitHub]('+REPO+') · [Research methods & data]('+REPO+'/blob/main/stablecoin-stress-lab-streamlit/EMPIRICAL_RESEARCH.md) · [zhangjiayi419@gmail.com](mailto:zhangjiayi419@gmail.com)')

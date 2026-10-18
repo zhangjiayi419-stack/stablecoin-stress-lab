@@ -95,6 +95,9 @@ with st.sidebar:
 def overview():
     from home_ui import render_cover
     render_cover(route)
+
+
+def daily_market_context():
     st.subheader('Market context')
     strip(f"USD data: {market_date} UTC · {'Recent daily snapshot' if market_age<=2 else 'Historical snapshot — refresh required'} · CoinGecko · Latest completed UTC day, not a live trading feed")
     if market_age>2:st.warning(f'The saved market snapshot is {market_age} days old. Treat the figures below as historical context.')
@@ -104,36 +107,17 @@ def overview():
         col.metric(asset+' / USD',f"{row.close_usd:.6f}",f"{(row.close_usd-1)*10000:+.2f} bps from USD 1",delta_color='off',help='Last sampled price in a completed UTC day. One basis point is 0.01 percentage point.')
     cols[2].metric('Historical pool snapshots',f'{len(snapshots)}',help='Sparse snapshots with block metadata; these are not a continuous liquidity feed.')
     cols[2].caption(f'{available[0]} → {available[-1]} UTC')
-    st.write('')
-    left,right=st.columns([1.65,1],gap='large')
-    with left:
-        st.subheader('The last 30 observed days')
-        recent=market[market.date_utc.isin(sorted(market.date_utc.unique())[-30:])]
-        price_chart(recent,bps=True)
-        st.caption('Shaded ±4 bps: illustrative friction band, not an estimated no-arbitrage bound. Actual fees, gas per order, capital costs and redemption frictions depend on trade size and route.')
-        st.caption('A price near USD 1 does not establish that a large sale can execute near USD 1. Pool depth and token composition are a separate question.')
-    with right:
-        with st.container(border=True):
-            st.markdown('<div class="card-label">Featured case study</div>',unsafe_allow_html=True)
-            st.subheader('USDC · March 2023')
-            st.write('Follow the observed price dislocation, inspect the recorded pool composition, then test the effect of a larger liquidity buffer.')
-            st.button('Explore the historical evidence →',type='primary',on_click=route,args=('Historical Research',),width='stretch')
-            st.caption('Recorded observations and hypothetical experiments remain separate throughout.')
-        st.write('')
-        st.button('Start with a simple sale estimate →',on_click=route,args=('Liquidity Stress Test',),width='stretch')
-    st.divider()
-    with st.container(border=True):
-        st.subheader('Daily Brief')
-        st.write('Read the latest English research brief, with dated observations and source records.')
-        st.button('Read Daily Brief →',on_click=route,args=('Daily Brief',))
-    with st.container(border=True):
-        st.subheader('New to the lab? Follow one question.')
-        st.markdown('1. **Observe** a historical price dislocation.\n2. **Inspect** the pool at a recorded block.\n3. **Test** a sale and a liquidity assumption.\n4. **Check** what the model has and has not validated.')
+    st.subheader('The last 30 observed days')
+    recent=market[market.date_utc.isin(sorted(market.date_utc.unique())[-30:])]
+    price_chart(recent,bps=True)
+    st.caption('Shaded ±4 bps: illustrative friction band, not an estimated no-arbitrage bound. Actual fees, gas per order, capital costs and redemption frictions depend on trade size and route.')
 
 
 def daily_brief():
     from daily_research_ui import render_daily_research
     render_daily_research()
+    st.divider()
+    daily_market_context()
 
 
 def historical():
@@ -513,6 +497,6 @@ st.caption('Stablecoin Stress Lab · Observed evidence, explicit assumptions, re
 
 _retained=dict(st.session_state.get('_retained_inputs',{}))
 for _key in list(st.session_state):
-    if _key.startswith(('abm_','model_','sale_','hold_','connected_','v3_','regime_','empirical_','research_','curve_','forecast_','projection_','validation_')) and _key!='model_csv' and not _key.endswith(('result','phase')):
+    if _key.startswith(('abm_','model_','sale_','hold_','connected_','v3_','regime_','empirical_','research_','curve_','forecast_','projection_','validation_','hero_')) and _key!='model_csv' and not _key.endswith(('result','phase')):
         _retained[_key]=st.session_state[_key]
 st.session_state['_retained_inputs']=_retained

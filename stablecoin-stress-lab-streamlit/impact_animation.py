@@ -5,10 +5,10 @@ import streamlit.components.v1 as components
 from mechanism_engine import Pool
 
 
-def render_impact_animation():
-    st.subheader('Interactive order-impact experiment')
+def render_impact_animation(show_heading=True):
+    if show_heading:st.subheader('Interactive order-impact experiment')
     a,b=st.columns([2,1])
-    fraction=a.slider('Sell size (% of initial pool value)',0.,60.,20.,step=1.,key='hero_order')
+    fraction=a.slider('Sell size (% of initial pool value)',0.,60.,40.,step=1.,key='hero_order')
     model=b.selectbox('Illustrative AMM',['Curve','Uniswap v3'],key='hero_model')
     total=20e6;amount=total*fraction/100;frames=[]
     for i in range(41):
