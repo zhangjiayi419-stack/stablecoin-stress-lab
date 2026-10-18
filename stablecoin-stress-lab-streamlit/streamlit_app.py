@@ -20,7 +20,7 @@ from terminal_theme import install_terminal_theme
 install_terminal_theme()
 # Restore widget inputs before Streamlit reconstructs page-local controls.
 for _key,_value in st.session_state.get('_retained_inputs',{}).items():
-    if _key not in st.session_state:st.session_state[_key]=_value
+    if _key!='model_csv' and _key not in st.session_state:st.session_state[_key]=_value
 
 @st.cache_data
 def research():
@@ -476,6 +476,6 @@ st.caption('Stablecoin Stress Lab · Observed evidence, explicit assumptions, re
 
 _retained=dict(st.session_state.get('_retained_inputs',{}))
 for _key in list(st.session_state):
-    if _key.startswith(('abm_','model_','sale_','hold_','connected_','v3_','regime_','empirical_','research_','curve_')) and not _key.endswith(('result','phase')):
+    if _key.startswith(('abm_','model_','sale_','hold_','connected_','v3_','regime_','empirical_','research_','curve_')) and _key!='model_csv' and not _key.endswith(('result','phase')):
         _retained[_key]=st.session_state[_key]
 st.session_state['_retained_inputs']=_retained

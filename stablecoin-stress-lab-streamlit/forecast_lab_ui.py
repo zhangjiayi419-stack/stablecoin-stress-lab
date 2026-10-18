@@ -27,11 +27,16 @@ def render_foundation_archive(default_rows):
     rows=default_rows
     if source=='Upload daily CSV':
         file=st.file_uploader('Daily USD prices',type=['csv'],key='model_csv',help='date_utc, asset, close_usd; USDC and USDT; ≥45 consecutive daily observations each. Only the last 90 per asset are used.')
-        if file is None:return
-        if file.size>2_000_000:raise ValueError('Use a CSV smaller than 2 MB.')
-        frame=pd.read_csv(file)
-        if not {'date_utc','asset','close_usd'}<=set(frame.columns):raise ValueError('Required columns: date_utc, asset, close_usd.')
-        rows=frame.to_dict('records')
+        if file is None:
+            rows=st.session_state.get('_uploaded_model_rows')
+            if rows is None:return
+            st.caption('Using your previously uploaded dataset retained in this session.')
+        else:
+            if file.size>2_000_000:raise ValueError('Use a CSV smaller than 2 MB.')
+            frame=pd.read_csv(file)
+            if not {'date_utc','asset','close_usd'}<=set(frame.columns):raise ValueError('Required columns: date_utc, asset, close_usd.')
+            rows=frame.to_dict('records')
+            st.session_state['_uploaded_model_rows']=rows
     asset_col,horizon_col=st.columns(2)
     asset=asset_col.selectbox('Asset',['USDC','USDT'],key='model_asset')
     horizon=horizon_col.select_slider('Forecast horizon (days)',options=[1,3,7],value=1,key='model_horizon')
