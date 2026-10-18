@@ -7,6 +7,13 @@ from mechanism_engine import Pool, simulate, default_config, default_positions, 
 from backend.app.domain.stable_swap import get_D
 
 class MechanismChecks(unittest.TestCase):
+    def test_default_demonstrates_profitable_liquidation_and_recovery(self):
+        result=simulate(default_config(),default_positions())
+        self.assertGreater(result['summary']['total_debt_repaid_usd'],0)
+        self.assertGreater(max(r['at_risk_usd'] for r in result['steps']),0)
+        self.assertLess(min(r['price'] for r in result['steps']),.97)
+        self.assertIsNotNone(result['summary']['recovery_block'])
+
     def test_v2_fee_adjusted_constant_product(self):
         p=Pool('Uniswap v2',20e6)
         initial=p.x*p.y

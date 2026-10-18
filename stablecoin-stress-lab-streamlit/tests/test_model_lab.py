@@ -34,6 +34,18 @@ class ModelLabChecks(unittest.TestCase):
         rows=data();self.assertEqual(fingerprint(rows),fingerprint(list(reversed(rows))))
         rows[0]['close_usd']=.9;self.assertNotEqual(fingerprint(rows),fingerprint(data()))
         self.assertIsNone(saved_chronos(rows))
+    def test_error_metric_bounds_and_regression(self):
+        import json,math
+        rows=json.loads((Path(__file__).resolve().parents[1]/'reports/prices_latest.json').read_text())
+        for h in (1,3,7):
+            result=evaluate(rows,'USDC',h)
+            for score in result['scores']:
+                errors=[(r['prediction_usd']-r['actual_usd'])*10000 for r in result['predictions'] if r['model']==score['model']]
+                expected=math.sqrt(sum(e*e for e in errors)/len(errors))
+                self.assertAlmostEqual(score['rmse_bps'],expected,places=10)
+                self.assertLessEqual(score['mae_bps'],score['rmse_bps']+1e-10)
+                self.assertLessEqual(score['rmse_bps'],score['worst_error_bps']+1e-10)
+
     def test_invalid_input_rejected(self):
         with self.assertRaises(ValueError):evaluate(data()[:-10]+data()[-9:],'USDT',1)
         with self.assertRaises(ValueError):predict([1.]*30,'AR(1)',2)
