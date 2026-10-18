@@ -8,31 +8,38 @@ from mechanism_engine import Pool, default_config, default_positions, simulate, 
 from terminal_charts import show, lines
 
 
+@st.cache_data(show_spinner=False)
+def curve_rows(depth,amp,ticks,outer):
+    starting_l=Pool('Uniswap v3',depth,amp,narrow_ticks=ticks,outer_share=outer).active_liquidity()
+    rows=[]
+    for kind in ('Curve','Uniswap v2','Uniswap v3'):
+        for pct in np.linspace(0,60,200):
+            pool=Pool(kind,depth,amp,narrow_ticks=ticks,outer_share=outer)
+            requested=depth*float(pct)/100;output,filled=pool.trade(requested)
+            rows.append(dict(AMM=kind,sell_pct=float(pct),price=pool.price(),average_price=output/filled if filled else None,
+                filled_tokens=filled,requested_tokens=requested,unfilled_tokens=max(0,requested-filled),
+                fill_pct=100*filled/requested if requested else 100.,
+                active_liquidity_pct=100*pool.active_liquidity()/starting_l if kind=='Uniswap v3' else None))
+    return rows
+
+
 def render_mechanism_lab():
-    st.markdown('<div class="eyebrow">05 / Connected mechanisms</div>',unsafe_allow_html=True)
+    st.markdown('<div class="eyebrow">06 / Connected mechanisms</div>',unsafe_allow_html=True)
     st.title('Mechanism Lab')
     st.write('Compare liquidity curves. Trace forced sales and capital-constrained recovery, one model block at a time.')
     st.info('Synthetic research sandbox. Two-token pools start balanced at USD 1. All depths, tick ranges, lending accounts and oracle behavior below are assumptions, not live protocol measurements.')
     curves,dynamics=st.tabs(['AMM curve comparison','Cascade & recovery'])
     with curves:
         a,b,c=st.columns(3)
-        depth=a.number_input('Equal starting pool value (USD)',1e5,1e9,20e6,step=1e6)
-        amp=b.slider('Curve amplification A',1,1000,100)
-        ticks=c.slider('v3 inner range (± ticks)',10,1000,200,step=10)
+        depth=a.number_input('Equal starting pool value (USD)',1e5,1e9,20e6,step=1e6,key='curve_depth')
+        amp=b.slider('Curve amplification A',1,1000,100,key='curve_amp')
+        ticks=c.slider('v3 inner range (± ticks)',10,1000,200,step=10,key='curve_ticks')
         profile=st.radio('v3 liquidity allocation',['Layered: 80% inner / 20% outer','Narrow range only'],horizontal=True,key='v3_profile')
         outer=.2 if profile.startswith('Layered') else 0.
         initial=Pool('Uniswap v3',depth,amp,narrow_ticks=ticks,outer_share=outer)
         starting_l=initial.active_liquidity()
         boundaries=[('Inner range exit',1.0001**(-ticks)),('Outer range exhaustion',1.0001**(-2000))] if outer else [('Tick boundary exhaustion',1.0001**(-ticks))]
-        rows=[]
-        for kind in ('Curve','Uniswap v2','Uniswap v3'):
-            for pct in np.linspace(0,60,200):
-                pool=Pool(kind,depth,amp,narrow_ticks=ticks,outer_share=outer)
-                requested=depth*float(pct)/100;output,filled=pool.trade(requested)
-                rows.append(dict(AMM=kind,sell_pct=float(pct),price=pool.price(),average_price=output/filled if filled else None,
-                    filled_tokens=filled,requested_tokens=requested,unfilled_tokens=max(0,requested-filled),
-                    fill_pct=100*filled/requested if requested else 100.,
-                    active_liquidity_pct=100*pool.active_liquidity()/starting_l if kind=='Uniswap v3' else None))
+        rows=curve_rows(depth,amp,ticks,outer)
         df=pd.DataFrame(rows);fig=go.Figure()
         for kind,g in df.groupby('AMM',sort=False):
             y=g.price.where(g.unfilled_tokens<1e-5) if kind=='Uniswap v3' else g.price
@@ -62,30 +69,30 @@ def render_mechanism_lab():
         c=default_config()
         with st.form('connected_mechanisms'):
             left,right=st.columns(2)
-            c['kind']=left.selectbox('Pool mechanism',['Curve','Uniswap v2','Uniswap v3'])
-            c['depth']=right.number_input('Starting pool value (USD)',1e5,1e9,20e6,step=1e6)
+            c['kind']=left.selectbox('Pool mechanism',['Curve','Uniswap v2','Uniswap v3'],key='connected_kind')
+            c['depth']=right.number_input('Starting pool value (USD)',1e5,1e9,20e6,step=1e6,key='connected_depth')
             c['amp']=amp;c['narrow_ticks']=ticks;c['outer_share']=outer
-            c['sell_tokens']=left.number_input('Holder sale wave (tokens)',0.,1e9,8e6,step=1e6)
-            c['blocks']=right.slider('Simulation horizon (blocks)',20,240,80,step=10)
-            c['arb_capital']=left.number_input('Arbitrage capital (USD)',0.,1e9,2e6,step=1e6)
-            c['liquidator_capital']=right.number_input('Liquidator working capital (USD)',0.,1e9,1e6,step=1e6)
+            c['sell_tokens']=left.number_input('Holder sale wave (tokens)',0.,1e9,8e6,step=1e6,key='connected_sell_tokens')
+            c['blocks']=right.slider('Simulation horizon (blocks)',20,240,80,step=10,key='connected_blocks')
+            c['arb_capital']=left.number_input('Arbitrage capital (USD)',0.,1e9,2e6,step=1e6,key='connected_arb_capital')
+            c['liquidator_capital']=right.number_input('Liquidator working capital (USD)',0.,1e9,1e6,step=1e6,key='connected_liquidator_capital')
             with st.expander('Execution, LP and oracle assumptions'):
                 a,b=st.columns(2)
-                c['lp_max']=a.slider('Maximum LP withdrawal (%)',0,90,60)/100
-                c['lp_speed']=b.slider('LP response to discount',0.,10.,2.,step=.5)
-                c['lp_acceleration']=a.slider('LP withdrawal momentum',0.,.95,.5,step=.05)
-                c['lp_trigger']=b.slider('LP trigger below peg (bps)',0,500,50,step=10)/10000
-                c['redemption_delay']=a.slider('Redemption settlement delay (blocks)',1,120,15)
-                c['funding_apr']=b.slider('Arbitrage funding APR (%)',0.,100.,10.)/100
-                c['gas']=a.number_input('Gas per arbitrage / liquidation (USD)',0.,10000.,10.)
-                c['oracle_lag']=b.slider('Synthetic oracle lag (blocks)',0,30,2)
-                c['close_factor']=a.slider('Liquidation close factor (%)',1,100,50)/100
-                c['bonus']=b.slider('Liquidation bonus (%)',0,20,5)/100
-                c['redemption_value']=a.slider('Assumed redemption value (USD)',.8,1.,1.,step=.01)
-                c['sell_blocks']=b.slider('Sale wave length (blocks)',1,20,10)
+                c['lp_max']=a.slider('Maximum LP withdrawal (%)',0,90,60,key='connected_lp_max')/100
+                c['lp_speed']=b.slider('LP response to discount',0.,10.,2.,step=.5,key='connected_lp_speed')
+                c['lp_acceleration']=a.slider('LP withdrawal momentum',0.,.95,.5,step=.05,key='connected_lp_acceleration')
+                c['lp_trigger']=b.slider('LP trigger below peg (bps)',0,500,50,step=10,key='connected_lp_trigger')/10000
+                c['redemption_delay']=a.slider('Redemption settlement delay (blocks)',1,120,15,key='connected_redemption_delay')
+                c['funding_apr']=b.slider('Arbitrage funding APR (%)',0.,100.,10.,key='connected_funding_apr')/100
+                c['gas']=a.number_input('Gas per arbitrage / liquidation (USD)',0.,10000.,10.,key='connected_gas')
+                c['oracle_lag']=b.slider('Synthetic oracle lag (blocks)',0,30,2,key='connected_oracle_lag')
+                c['close_factor']=a.slider('Liquidation close factor (%)',1,100,50,key='connected_close_factor')/100
+                c['bonus']=b.slider('Liquidation bonus (%)',0,20,5,key='connected_bonus')/100
+                c['redemption_value']=a.slider('Assumed redemption value (USD)',.8,1.,1.,step=.01,key='connected_redemption_value')
+                c['sell_blocks']=b.slider('Sale wave length (blocks)',1,20,10,key='connected_sell_blocks')
             st.caption('Block duration: 12 seconds. Recovery: within ±1% of USD 1 for five consecutive samples. Curve A and v3 ranges use the comparison settings above.')
             st.write('**Editable synthetic collateral book** — collateral is the stressed token; debt is USD-denominated and remains at par. Threshold is a fraction, e.g. 0.80. Add or remove assumed accounts.')
-            book=st.data_editor(pd.DataFrame(default_positions()),num_rows='dynamic',hide_index=True,key='collateral_book',column_config={
+            book=st.data_editor(pd.DataFrame(st.session_state.get('_collateral_book_data',default_positions())),num_rows='dynamic',hide_index=True,key='collateral_book',column_config={
                 'collateral_tokens':st.column_config.NumberColumn(min_value=0.,max_value=1e10),
                 'debt_usd':st.column_config.NumberColumn(min_value=0.,max_value=1e10),
                 'threshold':st.column_config.NumberColumn(min_value=.01,max_value=1.,step=.01)})
@@ -94,6 +101,7 @@ def render_mechanism_lab():
             try:
                 if book.empty or len(book)>200 or book.isna().any().any():raise ValueError('Use 1–200 complete collateral accounts.')
                 positions=book.to_dict('records')
+                st.session_state['_collateral_book_data']=positions
                 with st.status('Running connected stress test',expanded=True) as status:
                     st.write('1 / 3 · Initialize pool invariant and collateral health factors')
                     bar=st.progress(0)
@@ -108,11 +116,14 @@ def render_mechanism_lab():
                 record('Connected mechanism test',dict(config=c,positions=positions),result)
             except (ValueError,TypeError) as exc:
                 st.error(str(exc));st.session_state.pop('connected_result',None)
+        if 'connected_result' not in st.session_state:
+            st.session_state['connected_result']=simulate(default_config(),default_positions())
         result=st.session_state.get('connected_result')
         if result:
             if result['config']!=c or result['initial_positions']!=book.to_dict('records'):
                 st.info('Assumptions changed. Submit again to update the displayed run.')
-                return
+                st.caption('Displaying the saved run with its original assumptions; it remains visible until replaced.')
+            st.caption('Scenario submitted: '+str(result['config']['kind'])+' · sale '+format(result['config']['sell_tokens'],',.0f')+' tokens. Eligible collateral and actual debt repayment are separate quantities.')
             summary=result['summary'];df=pd.DataFrame(result['steps']);cols=st.columns(4)
             cols[0].metric('Lowest modeled quote',f"${df.price.min():.4f}")
             cols[1].metric('Peak eligible collateral',f"${df.at_risk_usd.max():,.0f}")

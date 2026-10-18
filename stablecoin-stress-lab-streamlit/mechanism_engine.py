@@ -157,7 +157,7 @@ def simulate(config, positions, progress=None):
 
 
 def default_config():
-    return dict(kind='Curve',depth=20e6,amp=100,narrow_ticks=200,blocks=80,sell_tokens=8e6,sell_blocks=10,
+    return dict(kind='Curve',outer_share=.2,depth=20e6,amp=100,narrow_ticks=200,blocks=80,sell_tokens=8e6,sell_blocks=10,
         arb_capital=2e6,liquidator_capital=1e6,gas=10.,funding_apr=.1,redemption_delay=15,redemption_value=1.,
         block_seconds=12,lp_max=.6,lp_speed=2.,lp_acceleration=.5,lp_trigger=.005,oracle_lag=2,
         close_factor=.5,bonus=.05,recovery_band=.01,recovery_samples=5)

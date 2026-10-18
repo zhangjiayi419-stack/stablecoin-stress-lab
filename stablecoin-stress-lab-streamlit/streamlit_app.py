@@ -18,6 +18,9 @@ from backend.app.services.agents import simulate_agents, phase_diagram
 st.set_page_config(page_title='Stablecoin Stress Lab',page_icon='◈',layout='wide',initial_sidebar_state='expanded')
 from terminal_theme import install_terminal_theme
 install_terminal_theme()
+# Restore widget inputs before Streamlit reconstructs page-local controls.
+for _key,_value in st.session_state.get('_retained_inputs',{}).items():
+    if _key not in st.session_state:st.session_state[_key]=_value
 
 @st.cache_data
 def research():
@@ -124,7 +127,7 @@ def overview():
         st.button('Read Daily Brief →',on_click=route,args=('Daily Brief',))
     with st.container(border=True):
         st.subheader('New to the lab? Follow one question.')
-        st.write('1. **Observe** a historical price dislocation.  2. **Inspect** the pool at a recorded block.  3. **Test** a sale and a liquidity assumption.  4. **Check** what the model has and has not validated.')
+        st.markdown('1. **Observe** a historical price dislocation.\n2. **Inspect** the pool at a recorded block.\n3. **Test** a sale and a liquidity assumption.\n4. **Check** what the model has and has not validated.')
 
 
 def daily_brief():
@@ -133,7 +136,7 @@ def daily_brief():
 
 
 def historical():
-    header('02 / Historical evidence','What happened during the stress?','Read the market evidence first. Historical observations describe an event; model estimates explain a possible execution mechanism.')
+    header('04 / Historical evidence','What happened during the stress?','Read the market evidence first. Historical observations describe an event; model estimates explain a possible execution mechanism.')
     case=st.selectbox('Case study',list(CASES),key='research_case')
     start,end,default_day,event_id=CASES[case]
     frame,pools,shares=event_frames(prices,snapshots,case)
@@ -280,8 +283,9 @@ def holdings_experiment():
     saved=st.session_state.get('hold_result')
     if not saved:return
     if saved[0]!=req.model_dump(mode='json'):
-        st.info('Inputs changed. Run the scenario again to update the results.')
-        return
+        st.info('Saved scenario retained with its submitted assumptions. Run again to replace it.')
+        req=PortfolioRequest(**saved[0])
+        day=str(req.date)
     result=saved[1]
     strip(f"HYPOTHETICAL SCENARIO · Reference date {day} · {req.duration_hours} model hours · Independent token simulations")
     cols=st.columns(3)
@@ -309,22 +313,35 @@ def holdings_experiment():
 
 def participant_experiment():
     st.caption('Stylized multi-cohort behavioral simulation anchored to 2023-03-11 historical pool states. Behavioral inputs are explicit scenario assumptions; partial empirical response estimates are reported separately in Data & Contract Evidence.')
+    reference=json.loads((ROOT/'svb_reference_fit.json').read_text())
+    reference_mode=st.radio('Participant scenario',['SVB path-fitted reference','Custom counterfactual'],key='abm_mode')=='SVB path-fitted reference'
+    if reference_mode:
+        st.caption('Default parameters minimize squared distance to observed hourly USDC prices. This is an in-sample effective scenario fit; the complete observed and modeled paths are shown below.')
+    if reference_mode:
+        for key,field in {'abm_date':'date','abm_asset':'stress_asset','abm_pressure':'redemption_pressure_pct','abm_depth':'pool_liquidity_multiplier','abm_panic':'holder_panic','abm_capital':'arbitrage_capital_usd','abm_lp':'lp_max_withdrawal_pct','abm_delay':'issuer_delay_hours','abm_cash':'cash_reserve_ratio_pct'}.items():
+            st.session_state[key]=reference['request'][field]
     c1,c2=st.columns(2)
-    day=c1.selectbox('Starting pool date',available,index=available.index('2023-03-11'),key='abm_date')
-    asset=c2.selectbox('Stressed token',['USDC','USDT'],key='abm_asset')
-    pressure=c1.slider('Redemption pressure (% of assumed supply)',0.,50.,5.,step=1.,key='abm_pressure')
-    depth=c2.slider('Initial pool depth multiplier',.1,5.,1.,step=.1,key='abm_depth')
-    panic=c1.slider('Holder panic (%)',0.,100.,50.,step=5.,key='abm_panic',help=r'Rule actually implemented: $q_t=\min\{R_t, (Q_0s_r/12)[0.25+1.5h+5(1-P_t)_+]\}$, $h=\mathrm{Panic}/100$. Pool execution is capped and excess demand queues. This is a stylized rule, not an identified panic elasticity.')
-    capital=c2.number_input('Arbitrage capital (USD)',0.,1e11,5e6,step=1e6,key='abm_capital')
+    day=c1.selectbox('Starting pool date',available,index=available.index('2023-03-11'),key='abm_date',disabled=reference_mode)
+    asset=c2.selectbox('Stressed token',['USDC','USDT'],key='abm_asset',disabled=reference_mode)
+    pressure=c1.slider('Redemption pressure (% of assumed supply)',0.,50.,5.,step=.01,key='abm_pressure',disabled=reference_mode)
+    depth=c2.slider('Initial pool depth multiplier',.1,5.,1.,step=.1,key='abm_depth',disabled=reference_mode)
+    panic=c1.slider('Holder panic (%)',0.,100.,50.,step=5.,key='abm_panic',help=r'Rule actually implemented: $q_t=\min\{R_t, (Q_0s_r/12)[0.25+1.5h+5(1-P_t)_+]\}$, $h=\mathrm{Panic}/100$. Pool execution is capped and excess demand queues. This is a stylized rule, not an identified panic elasticity.',disabled=reference_mode)
+    capital=c2.number_input('Arbitrage capital (USD)',0.,1e11,5e6,step=1e6,key='abm_capital',disabled=reference_mode)
     with st.expander('Issuer and liquidity frictions'):
-        delay=st.slider('Issuer processing delay (hours)',0,168,6,key='abm_delay')
-        withdrawal=st.slider('Maximum LP withdrawal (%)',0.,90.,30.,step=5.,key='abm_lp')
-        cash=st.slider('Cash reserve ratio assumption (%)',0.,100.,10.,step=5.,key='abm_cash')
-        treasury=st.checkbox('Enable hypothetical Treasury stress factors',key='abm_treasury')
-        rate=st.slider('Treasury rate shock (bps)',-2000.,2000.,0.,step=100.,key='abm_rate')
-        duration=st.slider('Treasury duration assumption (years)',0.,20.,.25,step=.25,key='abm_duration')
-        frozen=st.slider('Frozen reserves (%)',0.,100.,0.,step=5.,key='abm_frozen')
+        delay=st.slider('Issuer processing delay (hours)',0,168,6,key='abm_delay',disabled=reference_mode)
+        withdrawal=st.slider('Maximum LP withdrawal (%)',0.,90.,30.,step=5.,key='abm_lp',disabled=reference_mode)
+        cash=st.slider('Cash reserve ratio assumption (%)',0.,100.,10.,step=5.,key='abm_cash',disabled=reference_mode)
+        treasury=st.checkbox('Enable hypothetical Treasury stress factors',key='abm_treasury',disabled=reference_mode)
+        rate=st.slider('Treasury rate shock (bps)',-2000.,2000.,0.,step=100.,key='abm_rate',disabled=reference_mode)
+        duration=st.slider('Treasury duration assumption (years)',0.,20.,.25,step=.25,key='abm_duration',disabled=reference_mode)
+        frozen=st.slider('Frozen reserves (%)',0.,100.,0.,step=5.,key='abm_frozen',disabled=reference_mode)
     req=AgentExperimentRequest(date=day,stress_asset=asset,redemption_pressure_pct=pressure,pool_liquidity_multiplier=depth,holder_panic=panic,arbitrage_capital_usd=capital,issuer_delay_hours=delay,lp_max_withdrawal_pct=withdrawal,cash_reserve_ratio_pct=cash,treasury_protocol_mode=treasury,rate_shock_bps=rate,asset_duration_years=duration,frozen_reserve_pct=frozen)
+    if reference_mode:
+        req=AgentExperimentRequest(**reference['request'])
+        pass  # Keep the custom submitted run separate from the frozen reference
+        st.caption('Reference mode uses the frozen fitted request, independently of custom controls above. Select Custom counterfactual to run those controls. Pressure = '+format(req.redemption_pressure_pct,'.4f')+'% of assumed USD 1bn supply; arbitrage capital USD '+format(req.arbitrage_capital_usd,',.0f')+'.')
+    else:
+        st.warning('Counterfactual stress, not an SVB reconstruction: 15% means USD 150m of global redemption demand under the USD 1bn assumed supply. Extreme pool exhaustion is possible and is not a historical price prediction.')
     canonical_file=ROOT/'canonical_benchmarks.json'
     if canonical_file.exists():
         benchmarks=json.loads(canonical_file.read_text())
@@ -341,17 +358,25 @@ def participant_experiment():
             st.write('Evaluate independent parameter combinations and collect sensitivity statistics')
             st.session_state['abm_phase']=(req.model_dump(mode='json'),calculate(phase_diagram,req))
             status.update(label='Sensitivity grid complete',state='complete',expanded=False)
-    saved=st.session_state.get('abm_result')
+    saved=(reference['request'],reference['result']) if reference_mode else st.session_state.get('abm_result')
     if saved and saved[0]==req.model_dump(mode='json'):
         result=saved[1]
-        path_chart(result['steps'],['pool_implied_usdc_usd_after_agents'],'Modeled stressed-token USD quote')
+        fig=go.Figure(go.Scatter(x=[r['hour'] for r in result['steps']],y=[r['pool_implied_usdc_usd_after_agents'] for r in result['steps']],name='Modeled quote'))
+        if reference_mode:
+            fig.add_trace(go.Scatter(x=[r['hour'] for r in reference['observed']],y=[r['price'] for r in reference['observed']],name='Observed hourly USDC'))
+            st.caption('In-sample path RMSE: '+format(reference['rmse_bps'],'.2f')+' bps. '+reference['limitations'])
+        fig.update_layout(xaxis_title='Hours after exact historical pool block',yaxis_title='USD per USDC')
+        show_chart(fig,380)
         with st.expander('Participant flows and model state'):
             path_chart(result['steps'],['dai_pool','usdc_pool','usdt_pool'],'Pool token quantities')
             st.json(result['summary']);st.json(req.model_dump(mode='json'))
         json_export(result,'participant-experiment.json')
-    elif saved:st.info('Participant inputs changed. Run again to update this result.')
+    elif saved:
+        st.info('Saved run retained; inputs changed. Run again to replace it.')
+        path_chart(saved[1]['steps'],['pool_implied_usdc_usd_after_agents'],'Saved modeled quote')
     phase=st.session_state.get('abm_phase')
-    if phase and phase[0]==req.model_dump(mode='json'):
+    if phase:
+        if phase[0]!=req.model_dump(mode='json'):st.caption('Sensitivity grid retains its own submitted assumptions; download includes the exact request.')
         frame=pd.DataFrame(phase[1]['cells'])
         grid=frame.pivot(index='liquidity_multiplier',columns='redemption_pressure_pct',values='max_move_from_initial_pct')
         fig=go.Figure(go.Heatmap(x=list(grid.columns),y=list(grid.index),z=grid.values,colorscale='Blues',colorbar=dict(title='Move (pp)')))
@@ -361,7 +386,7 @@ def participant_experiment():
 
 
 def stress_test():
-    header('03 / Microstructure simulation','Multi-cohort liquidity experiments.','Historical pool anchors, explicit behavioral rules and reproducible sensitivity experiments.')
+    header('05 / Microstructure simulation','Multi-cohort liquidity experiments.','Historical pool anchors, explicit behavioral rules and reproducible sensitivity experiments.')
     strip('Observed starting state + hypothetical dynamics · Canonical SVB reference preloaded · No live quotes or trades')
     cohorts,sale,holdings=st.tabs(['Multi-Cohort Dynamics & Sensitivity Grid','Single-Order Market Impact','Institutional Balance-Sheet Scenarios'])
     with cohorts:participant_experiment()
@@ -387,7 +412,7 @@ def journal():
     render_journal()
 
 def validation():
-    header('04 / Evidence standards','Know what the model can support.','Compare forecast baselines, inspect model assumptions and trace the underlying data. See which results have been checked and which remain research hypotheses.')
+    header('09 / Evidence standards','Know what the model can support.','Compare forecast baselines, inspect model assumptions and trace the underlying data. See which results have been checked and which remain research hypotheses.')
     forecast_tab,execution_tab,data_tab,roadmap_tab=st.tabs(['Forecast validation','Execution & scenario models','Data & provenance','Research roadmap'])
     with forecast_tab:
         from forecast_ui import render_forecast_research
@@ -444,3 +469,9 @@ except (ValueError,LookupError,KeyError,OSError) as exc:
     with st.expander('Analysis details'):st.write(str(exc))
 st.divider()
 st.caption('Stablecoin Stress Lab · Observed evidence, explicit assumptions, reproducible experiments. Research estimates do not establish future performance.')
+
+_retained=dict(st.session_state.get('_retained_inputs',{}))
+for _key in list(st.session_state):
+    if _key.startswith(('abm_','model_','sale_','hold_','connected_','v3_','regime_','empirical_','research_','curve_')) and not _key.endswith(('result','phase')):
+        _retained[_key]=st.session_state[_key]
+st.session_state['_retained_inputs']=_retained

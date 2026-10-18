@@ -6,7 +6,7 @@ import statistics
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from forecast_brief import clean_series, fit
-VERSION='model-lab-1.0'
+VERSION='model-lab-1.1'
 MODELS=['Persistence','Rolling mean (7d)','AR(1)','Gradient boosting']
 
 
@@ -61,10 +61,13 @@ def evaluate(rows, asset, horizon=1, chronos=None):
     baseline=statistics.mean(abs(r['prediction_usd']-r['actual_usd'])*10000 for r in details if r['model']=='Persistence')
     for model in MODELS+(['Chronos-2'] if chronos else []):
         group=[r for r in details if r['model']==model]
-        errors=[(r['prediction_usd']-r['actual_usd'])*10000 for r in group]
+        errors=[float(r['prediction_usd']-r['actual_usd'])*10000 for r in group]
+        rmse=math.sqrt(math.fsum(e*e for e in errors)/len(errors))
+        if not min(map(abs,errors))-1e-10 <= rmse <= max(map(abs,errors))+1e-10:
+            raise ValueError('Forecast error metrics failed consistency validation')
         stress=[abs((r['prediction_usd']-r['actual_usd'])*10000) for r in group if abs(r['actual_usd']-1)>=.01]
         mae=statistics.mean(map(abs,errors))
-        scores.append(dict(model=model,n=len(errors),mae_bps=mae,rmse_bps=math.sqrt(statistics.mean(e*e for e in errors)),worst_error_bps=max(map(abs,errors)),improvement_pct=100*(1-mae/baseline) if baseline else None,stress_n=len(stress),stress_mae_bps=statistics.mean(stress) if stress else None))
+        scores.append(dict(model=model,n=len(errors),mae_bps=mae,rmse_bps=rmse,worst_error_bps=max(map(abs,errors)),improvement_pct=100*(1-mae/baseline) if baseline else None,stress_n=len(stress),stress_mae_bps=statistics.mean(stress) if stress else None))
     projections=[]
     for model in MODELS+(['Chronos-2'] if chronos else []):
         path=chronos['forecast'][asset]['median'][:horizon] if model=='Chronos-2' else predict(values,model,horizon)

@@ -13,7 +13,7 @@ def clean_time(value):
 
 
 def render_daily_research():
-    st.markdown('<div class="eyebrow">Daily / Econometric bulletin</div>',unsafe_allow_html=True)
+    st.markdown('<div class="eyebrow">02 / Econometric bulletin</div>',unsafe_allow_html=True)
     st.title('Daily Research Brief')
     data=artifact('econometric_results.json');rows=[]
     for asset in ['USDC','USDT']:

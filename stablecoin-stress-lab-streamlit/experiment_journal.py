@@ -18,7 +18,7 @@ def record(kind,request,result):
 
 
 def render_journal():
-    st.markdown('<div class="eyebrow">06 / Reproducible research</div>',unsafe_allow_html=True)
+    st.markdown('<div class="eyebrow">08 / Reproducible research</div>',unsafe_allow_html=True)
     st.title('Experiment Journal')
     st.write('Inspect the inputs, outputs and timestamps behind your research runs.')
     st.caption('Three read-only canonical benchmarks are preloaded from executed runs. Your latest 20 distinct session runs are added separately and are not shared with other visitors. Download the journal to retain session work.')

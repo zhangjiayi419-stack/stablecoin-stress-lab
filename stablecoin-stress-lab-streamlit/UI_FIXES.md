@@ -1,0 +1,11 @@
+# Numerical and interaction corrections
+
+- Foundation archive metrics are recomputed from one signed error vector. RMSE uses a float64 sum of squares and is checked against min/max absolute error. With the saved 2026-10-16 USDC snapshot, one-day persistence MAE = 0.609919, RMSE = 0.801692, worst error = 2.334860 bps. A wrapping HTML table replaces the canvas leaderboard.
+- One-day projections include their last observed anchor and explicit UTC daily date ticks, avoiding a degenerate one-point category axis.
+- The default participant scenario is an executed, bounded minimum-distance reference fit to the SVB hourly path, beginning at the pre-crisis March 10 pool block. Full fitted assumptions and an overlay of observations remain visible. It is an in-sample effective fit, not structural calibration or a held-out replication. The observed sampled minimum is 0.876675 and the fitted minimum is approximately 0.884750; path RMSE is approximately 174.935 bps. The mismatch is retained. Pressure refers to assumed global supply, not pool TVL. Custom extreme scenarios remain possible and explicitly labeled.
+- Connected mechanisms preload an actual nonzero default run: trough 0.935637, peak eligible collateral about 986,855 USD, debt repaid 780,000 USD, sustained recovery 11 blocks after the trough. The scenario remains synthetic.
+- Explicit widget inputs survive page cleanup. Submitted results stay visible with their own assumptions when inputs change. Form edits are submitted using the Run button. Session results persist within the current browser session; a server restart or new session still requires the journal download for durable storage.
+- Shared charts use automatic margins, title wrapping, and larger axis space. Workspace numbering follows sidebar order. Homepage guidance uses a proper four-item ordered list.
+- Frozen foundation results are precomputed for both assets and all three horizons, guarded by version and dataset fingerprint. The 600 curve solves are cached. Local warm navigation checks took 0.02–0.17 seconds; these are not internet latency guarantees.
+
+Reproduce the reference fit with `python fit_svb_reference.py`, foundation results with `python build_foundation_evaluations.py`, and checks with `python -m unittest discover -s tests -q`.

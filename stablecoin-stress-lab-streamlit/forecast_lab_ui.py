@@ -10,11 +10,17 @@ from experiment_journal import record
 
 @st.cache_data(show_spinner=False,max_entries=30)
 def cached_evaluation(rows,asset,horizon,artifact):
+    from pathlib import Path
+    precomputed=Path(__file__).with_name('foundation_evaluations.json')
+    if precomputed.exists():
+        saved=json.loads(precomputed.read_text())
+        if saved['dataset_sha256']==fingerprint(rows) and saved['version']==VERSION:
+            return saved['results'][asset+'|'+str(horizon)]
     return evaluate(rows,asset,horizon,artifact)
 
 
 def render_foundation_archive(default_rows):
-    st.markdown('<div class="eyebrow">02 / Model comparison</div>',unsafe_allow_html=True)
+    st.markdown('<div class="eyebrow">03 / Model comparison</div>',unsafe_allow_html=True)
     st.title('Forecast Lab')
     st.write('Test whether a model improves on carrying the last observed price forward. Compare peg deviations on identical chronological windows.')
     source=st.selectbox('Research dataset',['Saved daily observations','Upload daily CSV'],key='model_dataset')
@@ -40,7 +46,8 @@ def render_foundation_archive(default_rows):
     scores=pd.DataFrame(result['scores'])
     scores=scores.rename(columns=dict(model='Model',n='Origins',mae_bps='MAE (bps)',rmse_bps='RMSE (bps)',worst_error_bps='Worst error (bps)',improvement_pct='Improvement vs persistence (%)',stress_n='Stress targets',stress_mae_bps='Stress MAE (bps)'))
     st.subheader('Common-window leaderboard')
-    st.dataframe(scores,hide_index=True,width='stretch',column_config={c:st.column_config.NumberColumn(format='%.3f') for c in ['MAE (bps)','RMSE (bps)','Worst error (bps)','Improvement vs persistence (%)','Stress MAE (bps)']})
+    st.table(scores.style.format({c:'{:.3f}' for c in scores.columns if c not in ['Model','Origins','Stress targets']},na_rep='Not observed'))
+    st.caption('RMSE is computed from the same signed endpoint errors as MAE and worst error; MAE ≤ RMSE ≤ worst error is checked before display.')
     st.caption('Errors are measured in basis points of USD 1. Positive improvement means lower MAE than persistence. Every model uses the same ≤20 origins; each forecast sees only earlier observations in this evaluation loop. Multi-day target windows overlap, so errors are not independent.')
     if not result['scores'][0]['stress_n']:
         st.info('No selected targets deviated by ≥100 bps from USD 1. This sample cannot establish performance during depegs; stress metrics remain empty.')
@@ -48,10 +55,11 @@ def render_foundation_archive(default_rows):
     with a:
         fig=go.Figure();frame=pd.DataFrame(result['projections'])
         for model,g in frame.groupby('model',sort=False):
-            fig.add_trace(go.Scatter(x=g.date_utc,y=g.deviation_bps,name=model,mode='lines+markers'))
+            observed=next(v for d,v in __import__('forecast_brief').clean_series(rows,asset) if d.isoformat()==result['as_of'])
+            fig.add_trace(go.Scatter(x=[result['as_of']]+list(g.date_utc),y=[(observed-1)*10000]+list(g.deviation_bps),name=model,mode='lines+markers'))
         fig.add_hline(y=0,line_dash='dash',line_color='#8193aa')
         fig.update_layout(xaxis_title='Projected date (UTC)',yaxis_title='Deviation from USD 1 (bps)')
-        fig.update_xaxes(type='category')
+        fig.update_xaxes(type='date',dtick=86400000,tickformat='%b %d',range=[result['as_of'],frame.date_utc.max()])
         show(fig,key='model_projection')
         st.caption('Point projections, not event probabilities. Rolling mean uses the last seven observed values as a fixed forecast; AR(1) and boosting recurse forward. The same fixed settings are used at every origin; no hyperparameters are selected on this evaluation set.')
     with b:

@@ -22,7 +22,7 @@ def score_table(rows):
 
 
 def render_regime_study():
-    st.markdown('<div class="eyebrow">02 / Econometric evaluation</div>',unsafe_allow_html=True)
+    st.markdown('<div class="eyebrow">03 / Econometric evaluation</div>',unsafe_allow_html=True)
     st.title('Forecast Lab')
     st.write('Chronological regime evaluation, threshold dynamics and calibrated prediction intervals. Results include unsuccessful models.')
     a,b=st.columns([2,1])
