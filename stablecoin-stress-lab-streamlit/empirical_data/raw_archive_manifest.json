@@ -1,0 +1,18 @@
+{
+  "raw_response_count": 2695,
+  "format": "Gzip JSON Lines: one URL / request / retrieval timestamp / original response record per line",
+  "files": {
+    "decoded_events.json.gz": {
+      "sha256": "14490db86888c2df052e8adaf2f2654e5a530cc2c82fffac352a3813f18e1d74",
+      "bytes": 2676812
+    },
+    "pool_events.json.gz": {
+      "sha256": "7b279783a1f9c7a8d029f2053916910544374b72db21adceb30ac2eb8074cb40",
+      "bytes": 4340536
+    },
+    "raw_responses.jsonl.gz": {
+      "sha256": "249994e36960c5618bc26f4432fbecfcc15926012aadb5284cab2632832c4ced",
+      "bytes": 10076022
+    }
+  }
+}
