@@ -66,6 +66,9 @@ def price_chart(frame,height=280,bps=False):
     for asset,g in frame.groupby('asset',sort=False):
         fig.add_trace(go.Scatter(x=g.date_utc,y=g[field],name=asset,mode='lines',line=dict(color=TOKEN_COLORS[asset],width=2.3)))
     fig.add_hline(y=0 if bps else 1,line_dash='dash',line_color='#788da7')
+    if bps:
+        fig.add_hrect(y0=-4,y1=4,fillcolor='rgba(112,183,255,.07)',line_width=0)
+        for bound in [-4,4]:fig.add_hline(y=bound,line_dash='dot',line_color='#526b85')
     fig.update_layout(xaxis_title='Observation date (UTC)',yaxis_title='Deviation from USD 1 (bps)' if bps else 'USD price')
     fig.update_yaxes(tickformat='.2f' if bps else '.4f')
     show_chart(fig,height)
@@ -77,7 +80,7 @@ history,prices,snapshots=research()
 market_rows,market,market_date,market_age=latest_market(history)
 available=sorted({s['timestamp'][:10] for s in snapshots})
 SNAPSHOT_LABELS={'2023-03-11':'USDC stress case','2022-05-12':'USDT stress case','2022-11-09':'FTX stress case'}
-PAGES=['Overview','Daily Brief','Forecast Lab','Historical Research','Liquidity Stress Test','Mechanism Lab','Experiment Journal','Models & Validation']
+PAGES=['Overview','Daily Brief','Forecast Lab','Historical Research','Liquidity Stress Test','Mechanism Lab','Data & Contract Evidence','Experiment Journal','Models & Validation']
 with st.sidebar:
     st.markdown('<div class="brand-mark">◈</div><div class="brand">Stablecoin Stress Lab</div><div class="sidebar-kicker">LIQUIDITY RESEARCH</div>',unsafe_allow_html=True)
     page=st.radio('Research workspace',PAGES,key='workspace',label_visibility='collapsed')
@@ -103,6 +106,7 @@ def overview():
         st.subheader('The last 30 observed days')
         recent=market[market.date_utc.isin(sorted(market.date_utc.unique())[-30:])]
         price_chart(recent,bps=True)
+        st.caption('Shaded ±4 bps: illustrative friction band, not an estimated no-arbitrage bound. Actual fees, gas per order, capital costs and redemption frictions depend on trade size and route.')
         st.caption('A price near USD 1 does not establish that a large sale can execute near USD 1. Pool depth and token composition are a separate question.')
     with right:
         with st.container(border=True):
@@ -124,38 +128,8 @@ def overview():
 
 
 def daily_brief():
-    header('Daily / Research bulletin','Daily Brief','English research commentary based on dated market observations. Read the brief, inspect its sources, or download a copy.')
-    report=saved_report()
-    if not report:
-        st.info('The first daily brief has not been published yet. Market observations are available in Overview.')
-        return
-    facts=report['facts']
-    observed=facts['assets'][0]['as_of']
-    generated=facts['generated_at_utc']
-    method='AI commentary' if report.get('llm_status')=='Generated with Alibaba Qwen' else 'Statistical template'
-    strip(f'OBSERVATIONS: {observed} UTC · GENERATED: {generated[:16].replace("T"," ")} UTC · {method}')
-    age=(datetime.now(timezone.utc).date()-datetime.fromisoformat(observed).date()).days
-    if age>2:
-        st.warning(f'This brief uses observations from {observed} UTC ({age} days old). Treat it as a historical brief; a newer market update has not been published.')
-    st.caption('Scheduled daily at 09:15 Asia/Shanghai. Observation dates and generation times differ; scheduling and source updates may be delayed.')
-    lines=[]
-    for line in report['markdown'].splitlines():
-        line=line.split('LLM status:')[0].rstrip()
-        if line.startswith('# '):
-            line='## '+line[2:]
-        lines.append(line)
-    body='\n'.join(lines)
-    st.download_button('Download English brief',body,'stablecoin-daily-brief-'+observed+'.md','text/markdown',key='daily_brief_download')
-    st.divider()
-    st.markdown(body.replace('$',r'\$'))
-    st.divider()
-    with st.expander('Underlying facts and source record'):
-        st.write('**Data scope:** '+facts.get('scope','Daily USD observations.'))
-        st.write('**Data sources**')
-        for source in facts.get('sources',[]):
-            st.write(source)
-        st.caption('Price observations, statistical projections and hypothetical execution experiments answer different questions. This report does not include a live reserve or news feed.')
-        json_export(facts,'daily-brief-facts-'+observed+'.json','Download underlying facts')
+    from daily_research_ui import render_daily_research
+    render_daily_research()
 
 
 def historical():
@@ -249,7 +223,7 @@ def sale_experiment():
     for label,key in [('Historical pool model','historical'),('Hypothetical liquidity','counterfactual')]:
         r=saved[key]
         table.append({'Scenario':label,f'Net {output} received':r['net_output'],f'{output} per {req["asset"]} (net)':r['average_execution_price_net'],'Price impact, fee excluded (%)':r['price_impact_ex_fee_pct'],f'Fee ({output})':r['fee_amount']})
-    st.dataframe(pd.DataFrame(table),hide_index=True,width='stretch')
+    st.table(pd.DataFrame(table))
     st.caption('Price impact compares this trade’s average gross exchange rate with the model’s small-trade marginal rate. It is different from deviation against USD 1. Fees are shown separately; gas is excluded.')
     st.subheader('Sensitivity to pool depth')
     line_chart(pd.DataFrame(saved['sensitivity']),'liquidity_increase_pct',['impact_bps'],'Price impact excluding fee (bps)','Hypothetical increase in pool balances (%)',height=250)
@@ -279,8 +253,8 @@ def holdings_experiment():
     st.subheader('How could a hypothetical shock affect my holdings?')
     st.write('Start with your holdings and a preset. This model illustrates a mechanism; it does not assess issuer safety or predict your actual loss.')
     c1,c2=st.columns(2)
-    usdc=c1.number_input('USDC held',min_value=0.,max_value=1e10,value=10_000.,step=1000.,key='hold_usdc')
-    usdt=c2.number_input('USDT held',min_value=0.,max_value=1e10,value=10_000.,step=1000.,key='hold_usdt')
+    usdc=c1.number_input('USDC held',min_value=0.,max_value=1e10,value=10_000_000.,step=1_000_000.,key='hold_usdc')
+    usdt=c2.number_input('USDT held',min_value=0.,max_value=1e10,value=10_000_000.,step=1_000_000.,key='hold_usdt')
     preset=st.selectbox('Hypothetical scenario',list(PRESETS),key='hold_scenario')
     day=st.selectbox('Historical starting pool',available,index=available.index('2023-03-11'),key='hold_date')
     values=PRESETS[preset].copy()
@@ -334,23 +308,28 @@ def holdings_experiment():
 
 
 def participant_experiment():
-    st.caption('For research use. Participants are rule-based cohorts, not language-model agents. The model is uncalibrated.')
+    st.caption('Stylized multi-cohort behavioral simulation anchored to 2023-03-11 historical pool states. Behavioral inputs are explicit scenario assumptions; partial empirical response estimates are reported separately in Data & Contract Evidence.')
     c1,c2=st.columns(2)
     day=c1.selectbox('Starting pool date',available,index=available.index('2023-03-11'),key='abm_date')
     asset=c2.selectbox('Stressed token',['USDC','USDT'],key='abm_asset')
     pressure=c1.slider('Redemption pressure (% of assumed supply)',0.,50.,5.,step=1.,key='abm_pressure')
     depth=c2.slider('Initial pool depth multiplier',.1,5.,1.,step=.1,key='abm_depth')
-    panic=c1.slider('Holder panic (%)',0.,100.,50.,step=5.,key='abm_panic')
+    panic=c1.slider('Holder panic (%)',0.,100.,50.,step=5.,key='abm_panic',help=r'Rule actually implemented: $q_t=\min\{R_t, (Q_0s_r/12)[0.25+1.5h+5(1-P_t)_+]\}$, $h=\mathrm{Panic}/100$. Pool execution is capped and excess demand queues. This is a stylized rule, not an identified panic elasticity.')
     capital=c2.number_input('Arbitrage capital (USD)',0.,1e11,5e6,step=1e6,key='abm_capital')
     with st.expander('Issuer and liquidity frictions'):
         delay=st.slider('Issuer processing delay (hours)',0,168,6,key='abm_delay')
-        withdrawal=st.slider('Maximum LP withdrawal (%)',0.,90.,0.,step=5.,key='abm_lp')
+        withdrawal=st.slider('Maximum LP withdrawal (%)',0.,90.,30.,step=5.,key='abm_lp')
         cash=st.slider('Cash reserve ratio assumption (%)',0.,100.,10.,step=5.,key='abm_cash')
         treasury=st.checkbox('Enable hypothetical Treasury stress factors',key='abm_treasury')
         rate=st.slider('Treasury rate shock (bps)',-2000.,2000.,0.,step=100.,key='abm_rate')
         duration=st.slider('Treasury duration assumption (years)',0.,20.,.25,step=.25,key='abm_duration')
         frozen=st.slider('Frozen reserves (%)',0.,100.,0.,step=5.,key='abm_frozen')
     req=AgentExperimentRequest(date=day,stress_asset=asset,redemption_pressure_pct=pressure,pool_liquidity_multiplier=depth,holder_panic=panic,arbitrage_capital_usd=capital,issuer_delay_hours=delay,lp_max_withdrawal_pct=withdrawal,cash_reserve_ratio_pct=cash,treasury_protocol_mode=treasury,rate_shock_bps=rate,asset_duration_years=duration,frozen_reserve_pct=frozen)
+    canonical_file=ROOT/'canonical_benchmarks.json'
+    if canonical_file.exists():
+        benchmarks=json.loads(canonical_file.read_text())
+        st.session_state.setdefault('abm_result',(benchmarks[0]['request'],benchmarks[0]['result']))
+        st.session_state.setdefault('abm_phase',(benchmarks[1]['request'],benchmarks[1]['result']))
     a,b=st.columns(2)
     if a.button('Run participant experiment'):
         with st.status('Simulating participant rules…',expanded=True) as status:
@@ -382,14 +361,12 @@ def participant_experiment():
 
 
 def stress_test():
-    header('03 / Mechanism experiments','Liquidity stress experiments.','Start with a sale estimate or holdings scenario. Open Mechanism Lab for AMM comparisons, liquidation feedback and block-level recovery.')
-    strip('Historical starting conditions + hypothetical assumptions · Model outputs are estimates · No live quotes or trades')
-    sale,holdings=st.tabs(['Sell a position','Stress my holdings'])
+    header('03 / Microstructure simulation','Multi-cohort liquidity experiments.','Historical pool anchors, explicit behavioral rules and reproducible sensitivity experiments.')
+    strip('Observed starting state + hypothetical dynamics · Canonical SVB reference preloaded · No live quotes or trades')
+    cohorts,sale,holdings=st.tabs(['Multi-Cohort Dynamics & Sensitivity Grid','Single-Order Market Impact','Institutional Balance-Sheet Scenarios'])
+    with cohorts:participant_experiment()
     with sale:sale_experiment()
     with holdings:holdings_experiment()
-    st.divider()
-    with st.expander('Advanced research · participant dynamics and sensitivity grid'):
-        participant_experiment()
 
 
 def mechanism_lab():
@@ -400,6 +377,10 @@ def mechanism_lab():
 def forecast_lab():
     from forecast_lab_ui import render_forecast_lab
     render_forecast_lab(market_rows)
+
+def empirical_evidence():
+    from empirical_ui import render_evidence
+    render_evidence()
 
 def journal():
     from experiment_journal import render_journal
@@ -413,14 +394,14 @@ def validation():
         render_forecast_research(market_rows)
     with execution_tab:
         st.subheader('Validation status')
-        st.write('Forecast Lab compares four fitted baselines and matching saved Chronos-2 inference on shared chronological origins. Co-TSFA is an untrained research proposal. Experiment Journal records session-specific parameters and outputs.')
+        st.write('Forecast Lab reports threshold autoregression, chronological interval calibration and observed-covariate ablations. Co-TSFA and JEPA remain explicitly labeled experimental architectures; no trained result is implied. Exact-block solver evidence and effective-response estimation are published in Data & Contract Evidence.')
         table=[
-            {'Component':'Curve execution model','Evidence available':'Historical balances, A, fee and block metadata; numerical consistency checks','What remains open':'Contract get_dy / realized-transaction benchmark, token-rate precision and integer rounding','Status':'Approximation'},
+            {'Component':'Curve execution model','Evidence available':'Historical balances, A, fee and block metadata; numerical consistency checks','What remains open':'Broader pools, additional blocks, token-rate edge cases and transaction-level reconciliation','Status':'Exact-block benchmark published'},
             {'Component':'Rule-based participant model','Evidence available':'Explicit cohort rules, reproducible parameters and sensitivity experiments','What remains open':'Calibration to observed trading/redemption flows and held-out event testing','Status':'Uncalibrated'},
             {'Component':'Holdings scenarios','Evidence available':'Independent token paths and separate original-pool sale estimates','What remains open':'Joint price dynamics, correlations and synchronized valuation','Status':'Synthetic scenario'},
-            {'Component':'Daily English brief','Evidence available':'Saved structured facts and generation timestamp','What remains open':'Optional Qwen commentary requires working server credentials; text needs factual review','Status':'Template / optional LLM'},
+            {'Component':'Daily English brief','Evidence available':'Saved structured facts and generation timestamp','What remains open':'Source freshness, interval calibration and factual review','Status':'Deterministic econometric template'},
         ]
-        st.dataframe(pd.DataFrame(table),hide_index=True,width='stretch')
+        st.table(pd.DataFrame(table))
         st.subheader('What numerical checks establish')
         st.write('Tests check conservation through the gross-output invariant, fee arithmetic, scale consistency, and execution-cost sensitivity across trade sizes. Passing these checks does not establish agreement with the historical Curve contract or realized trades.')
         st.subheader('How the execution estimate works')
@@ -430,17 +411,17 @@ def validation():
         st.caption('No calibrated probability of safety, personal redemption ETA, statistical VaR or execution guarantee is produced.')
     with data_tab:
         st.subheader('Three different clocks')
-        st.dataframe(pd.DataFrame([
+        st.table(pd.DataFrame([
             {'Dataset':'Recent USD prices','Clock':market_date+' UTC','Source':'CoinGecko market_chart','Meaning':'Last sampled observation in each completed UTC day'},
             {'Dataset':'Historical USD prices','Clock':str(prices.date_utc.min())+' → '+str(prices.date_utc.max()),'Source':'DefiLlama / underlying CoinGecko identifiers','Meaning':'Hourly samples aggregated by UTC day; not exchange OHLC'},
             {'Dataset':'Historical pool snapshots','Clock':available[0]+' → '+available[-1],'Source':'Ethereum JSON-RPC · Curve 3pool','Meaning':'Sparse exact-block state; missing dates are not interpolated'}
-        ]),hide_index=True,width='stretch')
+        ]))
         st.write('USD prices and pool balances are not synchronized. Token balance totals must not be presented as dollar-valued reserves. Pool swap rates describe relative exchange rates; USD depeg measurement uses an independent USD series.')
         report=saved_report()
         if report:
             with st.expander('Daily brief generation record'):
                 st.write('Generated (UTC): '+report['facts']['generated_at_utc'])
-                st.write('LLM status: '+report.get('llm_status','Not recorded'))
+                st.write('Generation engine: deterministic, source-linked econometric reporting.')
                 st.write('Scheduled for 09:15 Asia/Shanghai through GitHub Actions. Schedules can be delayed; failed market-data updates retain the previous dated report.')
         for name in ['data/manifest.json','data/processed/curve_3pool_manifest.json']:
             file=ROOT/name
@@ -450,14 +431,14 @@ def validation():
         st.link_button('Curve 3pool contract','https://etherscan.io/address/0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7#code')
     with roadmap_tab:
         st.subheader('Next evidence to earn')
-        st.write('**1 · Execution accuracy.** Compare model outputs with archived contract get_dy calls at the same block, amount and token direction. Publish an error table rather than assuming historical accuracy.')
+        st.write('**1 · Execution accuracy.** Five historical blocks, three order sizes and both USDC/USDT directions are benchmarked against archived contract get_dy responses. Actual errors and raw units are available in Data & Contract Evidence.')
         st.write('**2 · Event calibration.** Fit participant parameters to observed flows, then evaluate on complete held-out stress events. Report sensitivity and failure cases.')
         st.write('**3 · Forecast robustness.** Add event-level holdouts, interval coverage, stress-regime errors and multiple seeds before claiming predictive value.')
-        st.write('**4 · Representation learning.** JEPA remains a proposed experiment. Compare persistence, a supervised backbone and the same backbone with pretraining on chronological splits. No JEPA model is trained or deployed here.')
+        st.write('**4 · Representation learning.** JEPA remains a proposed experiment. Compare persistence, a supervised backbone and the same backbone with pretraining on chronological splits. The architecture is a proposed controlled experiment, with no trained JEPA result currently reported.')
         st.caption('This roadmap describes future research, not current capabilities.')
 
 try:
-    {'Overview':overview,'Daily Brief':daily_brief,'Forecast Lab':forecast_lab,'Historical Research':historical,'Liquidity Stress Test':stress_test,'Mechanism Lab':mechanism_lab,'Experiment Journal':journal,'Models & Validation':validation}[page]()
+    {'Overview':overview,'Daily Brief':daily_brief,'Forecast Lab':forecast_lab,'Historical Research':historical,'Liquidity Stress Test':stress_test,'Mechanism Lab':mechanism_lab,'Data & Contract Evidence':empirical_evidence,'Experiment Journal':journal,'Models & Validation':validation}[page]()
 except (ValueError,LookupError,KeyError,OSError) as exc:
     st.error('This analysis could not be completed. Check the selected data and inputs.')
     with st.expander('Analysis details'):st.write(str(exc))

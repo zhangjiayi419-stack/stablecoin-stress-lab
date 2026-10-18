@@ -1,6 +1,7 @@
 """Mechanism research workspace with explicitly synthetic collateral books."""
 import json
 import pandas as pd
+import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
 from mechanism_engine import Pool, default_config, default_positions, simulate, collateral_at_risk
@@ -18,29 +19,52 @@ def render_mechanism_lab():
         depth=a.number_input('Equal starting pool value (USD)',1e5,1e9,20e6,step=1e6)
         amp=b.slider('Curve amplification A',1,1000,100)
         ticks=c.slider('v3 inner range (± ticks)',10,1000,200,step=10)
+        profile=st.radio('v3 liquidity allocation',['Layered: 80% inner / 20% outer','Narrow range only'],horizontal=True,key='v3_profile')
+        outer=.2 if profile.startswith('Layered') else 0.
+        initial=Pool('Uniswap v3',depth,amp,narrow_ticks=ticks,outer_share=outer)
+        starting_l=initial.active_liquidity()
+        boundaries=[('Inner range exit',1.0001**(-ticks)),('Outer range exhaustion',1.0001**(-2000))] if outer else [('Tick boundary exhaustion',1.0001**(-ticks))]
         rows=[]
         for kind in ('Curve','Uniswap v2','Uniswap v3'):
-            for fraction in [0,.001,.005,.01,.02,.05,.1,.2,.3,.4,.6]:
-                pool=Pool(kind,depth,amp,narrow_ticks=ticks)
-                output,filled=pool.trade(depth*fraction)
-                rows.append(dict(AMM=kind,sell_pct=fraction*100,price=pool.price(),average_price=output/filled if filled else 1.,filled_tokens=filled,requested_tokens=depth*fraction,unfilled_tokens=depth*fraction-filled))
+            for pct in np.linspace(0,60,200):
+                pool=Pool(kind,depth,amp,narrow_ticks=ticks,outer_share=outer)
+                requested=depth*float(pct)/100;output,filled=pool.trade(requested)
+                rows.append(dict(AMM=kind,sell_pct=float(pct),price=pool.price(),average_price=output/filled if filled else None,
+                    filled_tokens=filled,requested_tokens=requested,unfilled_tokens=max(0,requested-filled),
+                    fill_pct=100*filled/requested if requested else 100.,
+                    active_liquidity_pct=100*pool.active_liquidity()/starting_l if kind=='Uniswap v3' else None))
         df=pd.DataFrame(rows);fig=go.Figure()
         for kind,g in df.groupby('AMM',sort=False):
-            fig.add_trace(go.Scatter(x=g.sell_pct,y=g.price,name=kind,mode='lines+markers',customdata=g[['unfilled_tokens']].values,hovertemplate='%{y:.6f} USD<br>Unfilled: %{customdata[0]:,.0f}<extra>%{fullData.name}</extra>'))
-        fig.update_layout(xaxis_title='Requested sale / initial pool value (%)',yaxis_title='Post-sale marginal USD quote')
+            y=g.price.where(g.unfilled_tokens<1e-5) if kind=='Uniswap v3' else g.price
+            fig.add_trace(go.Scatter(x=g.sell_pct,y=y,name=kind,mode='lines',customdata=g[['unfilled_tokens']].values,hovertemplate='%{y:.6f}<br>Unfilled: %{customdata[0]:,.0f}<extra>%{fullData.name}</extra>'))
+        for label,price in boundaries:
+            x=initial.sell_capacity_to_price(price)/depth*100
+            if x<=60:
+                fig.add_vline(x=x,line_dash='dot',line_color='#dfb969',annotation_text=label,annotation_position='top left')
+                fig.add_hline(y=price,line_dash='dot',line_color='#526b85')
+        fig.update_layout(xaxis_title='Order Size (% of Initial Pool TVL)',yaxis_title='Post-sale marginal quote (USD-1 numeraire)')
         show(fig,key='amm_compare')
-        st.caption('Same initial marked value and 4 bps fee, different liquidity shapes. v3 allocates 80% of value to the selected ±tick range and 20% to ±2000 ticks. Orders stop at the outer boundary; a flat endpoint can indicate exhausted liquidity, not successful execution. USD-1 numeraire and unit token rates are assumed.')
-        with st.expander('Execution fills, tick boundaries & invariant definitions'):
-            st.dataframe(df,hide_index=True,width='stretch')
-            st.write('Curve: two-token StableSwap numerical invariant with A × n convention. Uniswap v2: x × y = k on fee-adjusted input. Uniswap v3: integrate Δx = L × (1/√P₂ − 1/√P₁), Δy = L × (√P₂ − √P₁) across tick-aligned range boundaries, updating active L. Floating-point approximations; no contract integer rounding, tick-spacing validation or historical tick map is reproduced.')
-            st.download_button('Download curve comparison',df.to_csv(index=False),'amm-comparison.csv','text/csv')
+        v3=df[df.AMM=='Uniswap v3'];a,b=st.columns(2)
+        with a:lines(v3,'sell_pct',['active_liquidity_pct','fill_pct'],'Initial active liquidity / fill (%)','Order Size (% of Initial Pool TVL)',key='active_v3')
+        with b:lines(v3,'sell_pct',['unfilled_tokens'],'Unfilled input tokens','Order Size (% of Initial Pool TVL)',key='unfilled_v3')
+        st.caption('200 independent order sizes, identical initial marked value and 4 bps fee assumption. Price traces stop when the requested order cannot fully execute. At an inner boundary only that range becomes inactive; overlapping outer liquidity can remain. Once all sell-side liquidity is exhausted, extra input is unfilled—not executed at a fabricated lower price. Token rates and the USD-1 numeraire are assumed.')
+        with st.expander('Execution table & mathematical specification'):
+            names={'sell_pct':'Order / initial value (%)','price':'Last reachable marginal quote','average_price':'Average net execution rate','filled_tokens':'Input tokens filled','requested_tokens':'Input tokens requested','unfilled_tokens':'Input tokens unfilled','fill_pct':'Fill ratio (%)','active_liquidity_pct':'Remaining active L (%)'}
+            table=df.rename(columns=names)
+            st.dataframe(table.style.format({c:'{:,.4f}' for c in table.columns if c!='AMM'},na_rep='—'),hide_index=True,width='stretch')
+            st.latex(r'A n^n\sum_i x_i+D=A D n^n+\frac{D^{n+1}}{n^n\prod_i x_i}')
+            st.caption('Curve whitepaper invariant. The implementation uses the contract-style Ann=A_code×n; whitepaper and contract amplification conventions must be matched before comparing A values.')
+            st.latex(r'xy=k,\qquad \Delta x=L\left(\frac{1}{\sqrt{P_2}}-\frac{1}{\sqrt{P_1}}\right),\quad \Delta y=L(\sqrt{P_2}-\sqrt{P_1})')
+            st.latex(r'L_{\mathrm{active}}(P)=\sum_j L_j\,\mathbf{1}\{P_{a,j}<P\le P_{b,j}\}')
+            st.caption('Two-token illustrative curves; historical three-token Curve contract accuracy is evaluated separately in Data & Contract Evidence. Floating-point execution excludes contract integer rounding. LVR is not inferred from single-order slippage: it requires an external-price path and a specified rebalancing benchmark.')
+            st.download_button('Download curve comparison',table.to_csv(index=False),'amm-comparison.csv','text/csv')
     with dynamics:
         c=default_config()
         with st.form('connected_mechanisms'):
             left,right=st.columns(2)
             c['kind']=left.selectbox('Pool mechanism',['Curve','Uniswap v2','Uniswap v3'])
             c['depth']=right.number_input('Starting pool value (USD)',1e5,1e9,20e6,step=1e6)
-            c['amp']=amp;c['narrow_ticks']=ticks
+            c['amp']=amp;c['narrow_ticks']=ticks;c['outer_share']=outer
             c['sell_tokens']=left.number_input('Holder sale wave (tokens)',0.,1e9,8e6,step=1e6)
             c['blocks']=right.slider('Simulation horizon (blocks)',20,240,80,step=10)
             c['arb_capital']=left.number_input('Arbitrage capital (USD)',0.,1e9,2e6,step=1e6)

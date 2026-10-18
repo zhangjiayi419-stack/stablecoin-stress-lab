@@ -65,6 +65,7 @@ input[type="number"]{font-family:var(--mono)}
 .stButton>button[kind="primary"],[data-testid="stFormSubmitButton"] button[kind="primaryFormSubmit"]{background:#79baff;color:#081320;border-color:#79baff;font-weight:600}
 .stButton>button[kind="primary"]:hover{background:#a0ceff;border-color:#a0ceff;color:#07101c}
 button:focus-visible,input:focus-visible{outline:2px solid #70b7ff;outline-offset:2px}
+[data-testid="stTable"] td,[data-testid="stTable"] th{white-space:normal!important;overflow-wrap:anywhere;max-width:340px;vertical-align:top;font-size:.75rem}
 hr{border-color:#223249!important}
 .eyebrow{font-family:var(--mono);font-size:.68rem;letter-spacing:.15em;font-weight:500;color:#6fb9ff;margin-bottom:10px;text-transform:uppercase}
 .deck{color:#9badc4;font-size:.97rem;max-width:890px;margin:8px 0 22px;line-height:1.65}

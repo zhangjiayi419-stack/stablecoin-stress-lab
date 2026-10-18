@@ -5,7 +5,7 @@ import streamlit as st
 def render_cover(route):
     st.markdown('''<style>
 .research-hero{padding:25px 0 10px;border-top:1px solid #25344a}.hero-label{font:11px monospace;letter-spacing:.19em;color:#70b7ff}.hero-title{font-size:clamp(38px,5vw,66px);line-height:1.05;letter-spacing:-.055em;font-weight:650;margin:22px 0;color:#e5edf7;max-width:870px}.hero-description{font-size:17px;line-height:1.6;color:#a6b7cb;max-width:720px;margin-bottom:30px}.mechanism-strip{display:flex;gap:10px;align-items:center;margin:20px 0}.mechanism-node{flex:1;border:1px solid #30445c;background:#101d2d;padding:20px 14px;min-height:100px;animation:research-pulse 12s infinite;color:#b9cee5}.mechanism-node:nth-child(2){animation-delay:3s}.mechanism-node:nth-child(3){animation-delay:6s}.mechanism-node:nth-child(4){animation-delay:9s}.mechanism-node strong{display:block;color:#e5edf7;font-size:14px;margin:8px 0}.mechanism-node small{font:10px monospace;color:#8da7c6}.motion-paused .mechanism-node{animation-play-state:paused}@keyframes research-pulse{0%,24%{border-color:#70b7ff;box-shadow:inset 0 2px #70b7ff;background:#182e46}25%,100%{border-color:#30445c;box-shadow:none;background:#101d2d}}@media(prefers-reduced-motion:reduce){.mechanism-node{animation:none}}@media(max-width:650px){.mechanism-strip{display:grid;grid-template-columns:1fr 1fr}.mechanism-node{min-height:90px}}
-</style><section class="research-hero"><div class="hero-label">STABLECOIN STRESS LAB / RESEARCH WORKSPACE</div><div class="hero-title">Stablecoin risk,<br>explained.</div><div class="hero-description">Trace price dislocations. Compare forecasting models. Explore how liquidity shocks spread—and what recovery requires.</div></section>''',unsafe_allow_html=True)
+</style><section class="research-hero"><div class="hero-label">STABLECOIN STRESS LAB / RESEARCH WORKSPACE</div><div class="hero-title">Systemic Liquidity &amp;<br>Depeg Contagion Lab</div><div class="hero-description">Empirical dislocation tracking, econometric tail-risk forecasting, and AMM liquidity spiral simulations.</div></section>''',unsafe_allow_html=True)
     cols=st.columns(3)
     entries=[('01 / OBSERVE','Explore Markets','Recorded USD prices and historical pool evidence.','Historical Research'),('02 / EVALUATE','Compare Models','Shared test windows, baseline errors and traceable forecasts.','Forecast Lab'),('03 / EXPERIMENT','Run Stress Test','AMM curves, LP exits, liquidation feedback and recovery.','Mechanism Lab')]
     for col,(label,title,description,page) in zip(cols,entries):
@@ -14,9 +14,6 @@ def render_cover(route):
                 st.markdown(f'<div class="card-label">{label}</div>',unsafe_allow_html=True)
                 st.subheader(title);st.caption(description)
                 st.button(title+' →',key='cover_'+page,on_click=route,args=(page,),width='stretch')
-    st.write('')
-    motion=st.toggle('Animate mechanism illustration',value=True,key='cover_motion')
-    cls='' if motion else 'motion-paused'
-    st.markdown(f'''<div class="mechanism-strip {cls}"><div class="mechanism-node"><small>01 / PRESSURE</small><strong>Holder sales</strong><small>Exit demand enters the pool</small></div><div class="mechanism-node"><small>02 / DEPTH</small><strong>Liquidity contracts</strong><small>LP withdrawals amplify impact</small></div><div class="mechanism-node"><small>03 / FEEDBACK</small><strong>Liquidations</strong><small>Eligible collateral can add sales</small></div><div class="mechanism-node"><small>04 / CAPITAL</small><strong>Recovery—or persistence</strong><small>Arbitrage faces capital and delay</small></div></div>''',unsafe_allow_html=True)
-    st.caption('Illustrative sequence only. This animation is not live market data or a simulated result. Scenarios can stop at persistent dislocation; recovery is not guaranteed.')
+    from impact_animation import render_impact_animation
+    render_impact_animation()
     st.divider()

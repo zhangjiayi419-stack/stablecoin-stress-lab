@@ -10,7 +10,7 @@ class Pool:
     v3 uses overlapping, tick-aligned ranges and integrates each crossed interval.
     Fee revenue is tracked separately in v3 (no auto compounding).
     """
-    def __init__(self, kind='Curve', depth=20e6, amp=100, fee=.0004, narrow_ticks=200):
+    def __init__(self, kind='Curve', depth=20e6, amp=100, fee=.0004, narrow_ticks=200, outer_share=.2):
         if kind not in ('Curve', 'Uniswap v2', 'Uniswap v3') or depth <= 0 or amp <= 0 or not 0 <= fee < 1:
             raise ValueError('Invalid pool parameters')
         self.kind, self.amp, self.fee = kind, amp, fee
@@ -18,7 +18,8 @@ class Pool:
         self.s = 1.
         self.fees = [0., 0.]
         self.ranges = []
-        for ticks, share in ((narrow_ticks, .8), (2000, .2)):
+        if not 0 <= outer_share <= 1:raise ValueError('Invalid outer allocation')
+        for ticks, share in ((narrow_ticks, 1-outer_share), (2000, outer_share)):
             if not 1 <= ticks <= 2000: raise ValueError('Tick width outside supported range')
             a, b = 1.0001 ** (-ticks/2), 1.0001 ** (ticks/2)
             liquidity = depth * share / ((1-1/b) + (1-a))
@@ -38,6 +39,16 @@ class Pool:
             x += l*(1/s-1/b)
             y += l*(s-a)
         return x,y
+
+    def active_liquidity(self):
+        if self.kind!='Uniswap v3':return None
+        # Active just below current price for token0 sales; exhausted lower edge = 0.
+        return sum(l for a,b,l in self.ranges if a+1e-12<self.s<=b+1e-12)
+
+    def sell_capacity_to_price(self, price):
+        target=sqrt(price)
+        return sum(l*(1/min(b,max(a,target))-1/min(b,max(a,self.s)))
+                   for a,b,l in self.ranges)/(1-self.fee)
 
     def withdraw(self, fraction):
         if not 0 <= fraction < 1: raise ValueError('Invalid withdrawal fraction')
@@ -86,7 +97,7 @@ def simulate(config, positions, progress=None):
     for p in book:
         if p['collateral_tokens']<0 or p['debt_usd']<0 or not 0<p['threshold']<=1:
             raise ValueError('Invalid collateral book')
-    pool=Pool(c['kind'],c['depth'],c['amp'],narrow_ticks=c['narrow_ticks'])
+    pool=Pool(c['kind'],c['depth'],c['amp'],narrow_ticks=c['narrow_ticks'],outer_share=c.get('outer_share',.2))
     rows=[]; history=[1.]; settlements=[]
     cash=c['arb_capital']; liquidator_cash=c['liquidator_capital']; removed=0.; previous_withdrawal=0.
     sold=liquidated=0.; funding_paid=gas_paid=0.

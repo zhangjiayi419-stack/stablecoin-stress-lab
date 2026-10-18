@@ -13,7 +13,7 @@ def cached_evaluation(rows,asset,horizon,artifact):
     return evaluate(rows,asset,horizon,artifact)
 
 
-def render_forecast_lab(default_rows):
+def render_foundation_archive(default_rows):
     st.markdown('<div class="eyebrow">02 / Model comparison</div>',unsafe_allow_html=True)
     st.title('Forecast Lab')
     st.write('Test whether a model improves on carrying the last observed price forward. Compare peg deviations on identical chronological windows.')
@@ -78,3 +78,11 @@ def render_forecast_lab(default_rows):
         st.markdown('[TMLR publication listing](https://jmlr.org/tmlr/papers/) · [Author implementation](https://github.com/caisr-hh/Co-TSFA-Contrastive-Time-Series-Forecasting-with-Anomalies) · [Chronos-2 code and report](https://github.com/amazon-science/chronos-forecasting)')
     st.download_button('Download comparison and experiment record',json.dumps(result,indent=2),'forecast-comparison-'+run_id+'.json','application/json')
     st.caption('The experiment is also available in Experiment Journal for this session. Forecast accuracy is distinct from a profitable trading strategy; transaction costs and executable orders are not modeled here.')
+
+
+def render_forecast_lab(default_rows):
+    study,foundation=st.tabs(['Regime, SETAR & interval evidence','Foundation-model baseline archive'])
+    with study:
+        from empirical_ui import render_regime_study
+        render_regime_study()
+    with foundation:render_foundation_archive(default_rows)
