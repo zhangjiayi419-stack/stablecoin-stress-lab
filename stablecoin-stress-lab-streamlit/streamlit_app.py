@@ -14,6 +14,7 @@ from backend.app.domain.schemas import PortfolioRequest, AgentExperimentRequest
 from backend.app.domain.stable_swap import quote_swap
 from backend.app.services.portfolio import portfolio_stress
 from backend.app.services.agents import simulate_agents, phase_diagram
+from participant_comparison import matched_phase_diagram,selected_cell,request_fingerprint
 
 st.set_page_config(page_title='Stablecoin Stress Lab',page_icon='◈',layout='wide',initial_sidebar_state='expanded')
 from terminal_theme import install_terminal_theme
@@ -311,6 +312,14 @@ def holdings_experiment():
         json_export(result,'holdings-scenario.json')
 
 
+@st.cache_data(show_spinner=False,max_entries=48)
+def cached_participant_path(submitted):
+    return simulate_agents(AgentExperimentRequest(**submitted))
+
+@st.cache_data(show_spinner=False,max_entries=48)
+def cached_matched_phase(submitted):
+    return matched_phase_diagram(AgentExperimentRequest(**submitted))
+
 def participant_experiment():
     st.caption('Stylized multi-cohort behavioral simulation anchored to exact historical pool states. The SVB reference starts from the pre-crisis March 10 block. Behavioral inputs are explicit scenario assumptions; partial empirical response estimates are reported separately in Data & Contract Evidence.')
     reference=json.loads((ROOT/'svb_reference_fit.json').read_text())
@@ -346,21 +355,32 @@ def participant_experiment():
     if canonical_file.exists():
         benchmarks=json.loads(canonical_file.read_text())
         st.session_state.setdefault('abm_result',(benchmarks[0]['request'],benchmarks[0]['result']))
-        st.session_state.setdefault('abm_phase',(benchmarks[1]['request'],benchmarks[1]['result']))
+
     a,b=st.columns(2)
     if a.button('Run participant experiment'):
         with st.status('Simulating participant rules…',expanded=True) as status:
             st.write('Initialize cohorts → apply trading and redemption rules → assess recovery')
             st.session_state['abm_result']=(req.model_dump(mode='json'),calculate(simulate_agents,req))
             status.update(label='Participant experiment complete',state='complete',expanded=False)
-    if b.button('Compare 42 pressure / depth combinations'):
-        with st.status('Building 42 pressure / depth scenarios…',expanded=True) as status:
+    if b.button('Record current sensitivity grid'):
+        with st.status('Recording matched pressure / depth scenarios…',expanded=True) as status:
             st.write('Evaluate independent parameter combinations and collect sensitivity statistics')
-            st.session_state['abm_phase']=(req.model_dump(mode='json'),calculate(phase_diagram,req))
+            st.session_state['abm_phase']=(req.model_dump(mode='json'),cached_matched_phase(req.model_dump(mode='json')))
+            from experiment_journal import record
+            record('Matched participant sensitivity',req.model_dump(mode='json'),st.session_state['abm_phase'][1])
             status.update(label='Sensitivity grid complete',state='complete',expanded=False)
-    saved=(reference['request'],reference['result']) if reference_mode else st.session_state.get('abm_result')
+    submitted=req.model_dump(mode='json')
+    saved=(reference['request'],reference['result']) if reference_mode else (submitted,cached_participant_path(submitted))
+    st.caption('Current path and sensitivity grid update together from the same request · '+request_fingerprint(req)[:12]+'. Run/Record stores a journal entry; no old scenario is substituted.')
     if saved and saved[0]==req.model_dump(mode='json'):
         result=saved[1]
+        _start=result['initial_pool_implied_usdc_usd'];_summary=result['summary']
+        _a,_b,_c=st.columns(3)
+        _a.metric('Initial pool-implied USD quote',format(_start,'.6f'))
+        _b.metric('Maximum move from initial (pp)',format(_summary['max_move_from_initial_pct'],'.6f'))
+        _c.metric('Maximum discount below USD 1 (%)',format(_summary['max_depeg_depth_pct'],'.6f'))
+        _fixed=result['independent_usd_reference']['USDT' if req.stress_asset=='USDC' else 'USDC']
+        st.caption('Pool-implied USD quote = stressed-token / other-token marginal pool rate × fixed other-token USD reference ('+format(_fixed,'.6f')+'). This is not an observed USD price path. Selling can reduce a premium while the quote remains above USD 1. Only discount-buying redemption arbitrage is modeled; no premium-side issuance arbitrage forces the quote to par.')
         if reference_mode:
             _a,_b=st.columns(2)
             _a.metric('Observed sampled trough',format(min(r['price'] for r in reference['observed']),'.6f'))
@@ -378,15 +398,32 @@ def participant_experiment():
     elif saved:
         st.info('Saved run retained; inputs changed. Run again to replace it.')
         path_chart(saved[1]['steps'],['pool_implied_usdc_usd_after_agents'],'Saved modeled quote')
-    phase=st.session_state.get('abm_phase')
-    if phase:
-        if phase[0]!=req.model_dump(mode='json'):st.caption('Sensitivity grid retains its own submitted assumptions; download includes the exact request.')
-        frame=pd.DataFrame(phase[1]['cells'])
-        grid=frame.pivot(index='liquidity_multiplier',columns='redemption_pressure_pct',values='max_move_from_initial_pct')
-        fig=go.Figure(go.Heatmap(x=list(grid.columns),y=list(grid.index),z=grid.values,colorscale='Blues',colorbar=dict(title='Move (pp)')))
-        fig.update_layout(xaxis_title='Redemption pressure (%)',yaxis_title='Pool depth multiplier')
-        show_chart(fig,300)
-        json_export(phase[1],'participant-sensitivity.json')
+    phase=cached_matched_phase(submitted)
+    cell=selected_cell(phase,req)
+    path_summary=saved[1]['summary']
+    for field in ['max_move_from_initial_pct','max_depeg_depth_pct']:
+        if abs(cell[field]-path_summary[field])>1e-8:
+            raise ValueError('Current path and selected grid cell disagree; regenerate the saved reference before comparing.')
+    st.subheader('Sensitivity grid · same starting state and participant assumptions')
+    metric=st.radio('Sensitivity measure',['Maximum move from initial (pp)','Maximum discount below USD 1 (%)'],key='abm_grid_metric')
+    field='max_move_from_initial_pct' if metric.startswith('Maximum move') else 'max_depeg_depth_pct'
+    st.caption(str(len(phase['cells']))+' executed scenarios. Only pressure and depth vary; the selected coordinates are explicitly evaluated. Categorical cells do not imply interpolated thresholds between sampled pressures.')
+    frame=pd.DataFrame(phase['cells'])
+    grid=frame.pivot(index='liquidity_multiplier',columns='redemption_pressure_pct',values=field)
+    x=[format(v,'.4g') for v in grid.columns];y=[format(v,'.4g') for v in grid.index]
+    fig=go.Figure(go.Heatmap(x=x,y=y,z=grid.values,colorscale='Blues',colorbar=dict(title='pp' if field=='max_move_from_initial_pct' else '%'),hovertemplate='Pressure %{x}%<br>Depth %{y}×<br>'+metric+': %{z:.6f}<extra></extra>'))
+    fig.add_trace(go.Scatter(x=[format(req.redemption_pressure_pct,'.4g')],y=[format(req.pool_liquidity_multiplier,'.4g')],mode='markers',marker=dict(symbol='square-open',size=21,color='#dfb969',line=dict(width=3)),name='Current path',hoverinfo='skip'))
+    fig.update_layout(xaxis_title='Redemption pressure (% of assumed supply)',yaxis_title='Initial pool depth multiplier')
+    fig.update_xaxes(type='category');fig.update_yaxes(type='category')
+    show_chart(fig,380,key='matched_phase')
+    st.write('**Current path = selected grid cell:** pressure '+format(req.redemption_pressure_pct,'.4f')+'%, depth '+format(req.pool_liquidity_multiplier,'.2f')+'× · '+metric+' = **'+format(cell[field],'.6f')+'**.')
+    with st.expander('Shared assumptions, source anchor and metric definitions'):
+        st.json(submitted)
+        st.write('Pool block timestamp: '+saved[1]['historical_snapshot']['timestamp'])
+        st.write(phase['metric_definition'])
+        st.latex(r'\Delta P_{max}=100\max_t|P_t-P_0|,\qquad D_{max}=100\max(0,1-\min_t P_t)')
+        st.caption('A move in percentage points of USD 1 differs from percentage return relative to the starting quote. Positive premium is not a discount. The USD reference is held fixed throughout the counterfactual.')
+    json_export(phase,'matched-participant-sensitivity.json')
 
 
 def stress_test():
@@ -476,6 +513,6 @@ st.caption('Stablecoin Stress Lab · Observed evidence, explicit assumptions, re
 
 _retained=dict(st.session_state.get('_retained_inputs',{}))
 for _key in list(st.session_state):
-    if _key.startswith(('abm_','model_','sale_','hold_','connected_','v3_','regime_','empirical_','research_','curve_')) and _key!='model_csv' and not _key.endswith(('result','phase')):
+    if _key.startswith(('abm_','model_','sale_','hold_','connected_','v3_','regime_','empirical_','research_','curve_','forecast_','projection_','validation_')) and _key!='model_csv' and not _key.endswith(('result','phase')):
         _retained[_key]=st.session_state[_key]
 st.session_state['_retained_inputs']=_retained

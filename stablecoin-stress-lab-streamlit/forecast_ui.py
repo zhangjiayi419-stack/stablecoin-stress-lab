@@ -11,6 +11,27 @@ def current_prices():
     return fetch_current()
 
 
+def projection_figure(result):
+    frame=pd.DataFrame(result['forecast'])
+    dates=frame.date_utc.astype(str).tolist()
+    fig=go.Figure()
+    if len(frame)==1:
+        row=frame.iloc[0]
+        fig.add_trace(go.Scatter(x=dates,y=[row.forecast_usd],mode='markers',name='AR(1)',marker=dict(size=10,color='#70b7ff'),error_y=dict(type='data',symmetric=False,array=[row.upper_90-row.forecast_usd],arrayminus=[row.forecast_usd-row.lower_90],visible=True),hovertemplate='%{x}<br>USD %{y:.6f}<extra>AR(1), conditional 90% interval</extra>'))
+        fig.add_trace(go.Scatter(x=dates,y=[result['latest_usd']],mode='markers',name='Persistence',marker=dict(size=10,symbol='diamond',color='#8fa2b9')))
+    else:
+        fig.add_trace(go.Scatter(x=dates,y=frame.lower_90,line=dict(width=0),showlegend=False,hoverinfo='skip'))
+        fig.add_trace(go.Scatter(x=dates,y=frame.upper_90,line=dict(width=0),fill='tonexty',fillcolor='rgba(112,183,255,.18)',name='Conditional 90% interval'))
+        fig.add_trace(go.Scatter(x=dates,y=frame.forecast_usd,mode='lines+markers',name='AR(1)',line=dict(color='#70b7ff')))
+        fig.add_trace(go.Scatter(x=dates,y=[result['latest_usd']]*len(frame),name='Persistence',line=dict(color='#8fa2b9',dash='dash')))
+    fig.update_layout(xaxis_title='Projection date (UTC)',yaxis_title='USD')
+    # Explicit dates on a category axis prevent Plotly expanding a single midnight
+    # into sub-millisecond ticks around 23:59:59.999.
+    fig.update_xaxes(type='category',categoryorder='array',categoryarray=dates,tickmode='array',tickvals=dates,ticktext=dates)
+    fig.update_yaxes(tickformat='.6f')
+    return fig
+
+
 def render_forecast_research(default_rows):
     st.subheader('Can the model beat a simple baseline?')
     st.write('This is an experimental daily-price model. Compare its held-out errors with carrying the last observed price forward before interpreting its outlook.')
@@ -52,15 +73,9 @@ def render_forecast_research(default_rows):
     frame=pd.DataFrame(result['forecast'])
     frame['utc_date']=frame.date_utc.astype(str)
     frame['persistence_usd']=result['latest_usd']
-    fig=go.Figure()
-    fig.add_trace(go.Scatter(x=frame.date_utc,y=frame.lower_90,line=dict(width=0),showlegend=False,hoverinfo='skip'))
-    fig.add_trace(go.Scatter(x=frame.date_utc,y=frame.upper_90,line=dict(width=0),fill='tonexty',fillcolor='rgba(112,183,255,.18)',name='Conditional 90% interval'))
-    fig.add_trace(go.Scatter(x=frame.date_utc,y=frame.forecast_usd,mode='lines+markers',name='AR(1)',line=dict(color='#70b7ff')))
-    fig.add_trace(go.Scatter(x=frame.date_utc,y=frame.persistence_usd,name='Persistence',line=dict(color='#8fa2b9',dash='dash')))
-    fig.update_layout(xaxis_title='Projection date (UTC)',yaxis_title='USD')
-    fig.update_yaxes(tickformat='.6f')
+    fig=projection_figure(result)
     show(fig,300)
-    st.caption('Blue: AR(1) · shaded: conditional 90% residual-bootstrap model interval · dashed: persistence. Multi-day intervals have not been independently validated. They are not calibrated depeg probabilities.')
+    st.caption('For a one-day horizon, markers and an error bar show the single dated forecast and conditional interval. Blue: AR(1) · shaded: conditional 90% residual-bootstrap model interval · dashed: persistence. Multi-day intervals have not been independently validated. They are not calibrated depeg probabilities.')
     with st.expander('Specification, projection table & reproducible export'):
         st.write(result['model'])
         st.write('Minimum 45 consecutive daily observations; maximum 90. Coefficient constrained to [-0.98, 0.98]. Residual bootstrap: 1,000 paths, fixed seed 419. Parameter uncertainty, liquidity shocks and issuer fundamentals are excluded.')
