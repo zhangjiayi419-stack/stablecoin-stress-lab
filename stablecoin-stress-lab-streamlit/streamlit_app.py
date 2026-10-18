@@ -312,7 +312,7 @@ def holdings_experiment():
 
 
 def participant_experiment():
-    st.caption('Stylized multi-cohort behavioral simulation anchored to 2023-03-11 historical pool states. Behavioral inputs are explicit scenario assumptions; partial empirical response estimates are reported separately in Data & Contract Evidence.')
+    st.caption('Stylized multi-cohort behavioral simulation anchored to exact historical pool states. The SVB reference starts from the pre-crisis March 10 block. Behavioral inputs are explicit scenario assumptions; partial empirical response estimates are reported separately in Data & Contract Evidence.')
     reference=json.loads((ROOT/'svb_reference_fit.json').read_text())
     reference_mode=st.radio('Participant scenario',['SVB path-fitted reference','Custom counterfactual'],key='abm_mode')=='SVB path-fitted reference'
     if reference_mode:
@@ -339,7 +339,7 @@ def participant_experiment():
     if reference_mode:
         req=AgentExperimentRequest(**reference['request'])
         pass  # Keep the custom submitted run separate from the frozen reference
-        st.caption('Reference mode uses the frozen fitted request, independently of custom controls above. Select Custom counterfactual to run those controls. Pressure = '+format(req.redemption_pressure_pct,'.4f')+'% of assumed USD 1bn supply; arbitrage capital USD '+format(req.arbitrage_capital_usd,',.0f')+'.')
+        st.caption('Reference mode displays the frozen fitted request in read-only controls. Select Custom counterfactual to edit and run a new scenario. Pressure = '+format(req.redemption_pressure_pct,'.4f')+'% of assumed USD 1bn supply; arbitrage capital USD '+format(req.arbitrage_capital_usd,',.0f')+'.')
     else:
         st.warning('Counterfactual stress, not an SVB reconstruction: 15% means USD 150m of global redemption demand under the USD 1bn assumed supply. Extreme pool exhaustion is possible and is not a historical price prediction.')
     canonical_file=ROOT/'canonical_benchmarks.json'
@@ -361,6 +361,10 @@ def participant_experiment():
     saved=(reference['request'],reference['result']) if reference_mode else st.session_state.get('abm_result')
     if saved and saved[0]==req.model_dump(mode='json'):
         result=saved[1]
+        if reference_mode:
+            _a,_b=st.columns(2)
+            _a.metric('Observed sampled trough',format(min(r['price'] for r in reference['observed']),'.6f'))
+            _b.metric('Fitted path trough',format(min(r['pool_implied_usdc_usd_after_agents'] for r in result['steps']),'.6f'))
         fig=go.Figure(go.Scatter(x=[r['hour'] for r in result['steps']],y=[r['pool_implied_usdc_usd_after_agents'] for r in result['steps']],name='Modeled quote'))
         if reference_mode:
             fig.add_trace(go.Scatter(x=[r['hour'] for r in reference['observed']],y=[r['price'] for r in reference['observed']],name='Observed hourly USDC'))
