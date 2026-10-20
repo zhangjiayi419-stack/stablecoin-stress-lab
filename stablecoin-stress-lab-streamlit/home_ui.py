@@ -12,10 +12,11 @@ def findings():
     gb=next(r for r in scores if r['Model']=='Gradient boosting')
     hourly=json.loads((ROOT/'empirical_data/covariate_results.json').read_text())
     cov=next(r for r in hourly['results']['USDC']['scores'] if r['Model']=='GB + observed covariates')
+    price_only=next(r for r in hourly['results']['USDC']['scores'] if r['Model']=='GB price-only')
     observations=json.loads((ROOT/'empirical_data/prices_hourly.json').read_text())
     low=min(r['price_usd'] for r in observations if r['asset']=='USDC' and '2023-03-09'<=r['timestamp']<'2023-03-16')
     manifest=json.loads((ROOT/'empirical_data/manifest.json').read_text())
-    return dict(low=low,improvement=gb['Improvement_pct'],targets=gb['Targets'],covariate_improvement=cov['Improvement_pct'],solver_error=manifest['maximum_solver_error_bps'],quotes=manifest['contract_quotes'])
+    return dict(low=low,improvement=gb['Improvement_pct'],targets=gb['Targets'],covariate_improvement=cov['Improvement_pct'],solver_error=manifest['maximum_solver_error_bps'],quotes=manifest['contract_quotes'],stress_targets=gb['Stress_targets'],stress_mae=gb['Stress_MAE_bps'],price_only_improvement=price_only['Improvement_pct'],ablation_gain=100*(1-cov['MAE_bps']/price_only['MAE_bps']))
 
 
 def render_cover(route):
@@ -27,8 +28,8 @@ def render_cover(route):
     st.subheader('Key Findings')
     f=findings();cols=st.columns(3)
     cards=[('Observed stress',f"${f['low']:.4f}",'USDC’s sampled low during the March 2023 SVB shock.',f"{f['quotes']} historical contract quotes reproduced within 0.000001 bps."),
-           ('Daily forecasting',f"+{f['improvement']:.1f}%",'Lower MAE than persistence for gradient boosting in the SVB daily evaluation.',f"Fixed SVB evaluation: **{f['targets']} shared one-day targets**. One event; not a general performance guarantee."),
-           ('Negative results',f"{f['covariate_improvement']:.1f}%",'The onchain-covariate model underperformed persistence in the hourly USDC test.','Unsuccessful models stay in the leaderboard. No results are hidden to improve the ranking.')]
+           ('Daily forecasting',f"+{f['improvement']:.1f}%",'Lower overall daily MAE in one SVB evaluation; this is not a crisis-performance claim.',f"Fixed SVB evaluation: **{f['targets']} shared one-day targets**; only **{f['stress_targets']} stress target** (>100 bps). On that target GB error is 497.1 bps vs persistence 445.0 bps."),
+           ('Hourly baseline shortfall',f"{f['covariate_improvement']:.1f}%",'GB + observed covariates versus persistence: lower is worse on this skill scale.',f"Price-only GB: {f['price_only_improvement']:.1f}%. Covariates reduce GB MAE by {f['ablation_gain']:.2f}%, but neither version beats persistence. 171 shared hourly targets, including 41 stress targets.")]
     for col,(label,value,text,note) in zip(cols,cards):
         with col:
             with st.container(border=True):

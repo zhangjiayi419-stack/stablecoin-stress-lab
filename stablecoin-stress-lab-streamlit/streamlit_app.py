@@ -105,7 +105,7 @@ def daily_market_context():
     for asset,col in zip(['USDC','USDT'],cols[:2]):
         row=market[(market.asset==asset)&(market.date_utc==market_date)].iloc[-1]
         col.metric(asset+' / USD',f"{row.close_usd:.6f}",f"{(row.close_usd-1)*10000:+.2f} bps from USD 1",delta_color='off',help='Last sampled price in a completed UTC day. One basis point is 0.01 percentage point.')
-    cols[2].metric('Historical pool snapshots',f'{len(snapshots)}',help='Sparse snapshots with block metadata; these are not a continuous liquidity feed.')
+    cols[2].metric('Replay catalog · sparse pool snapshots',f'{len(snapshots)}',help='Replay catalog only; 346 empirical state observations are a separate Jan–Apr 2023 collection. Case pages filter this catalog by date. Counts are not interchangeable.')
     cols[2].caption(f'{available[0]} → {available[-1]} UTC')
     st.subheader('The last 30 observed days')
     recent=market[market.date_utc.isin(sorted(market.date_utc.unique())[-30:])]
@@ -305,7 +305,7 @@ def cached_matched_phase(submitted):
     return matched_phase_diagram(AgentExperimentRequest(**submitted))
 
 def participant_experiment():
-    st.caption('Stylized multi-cohort behavioral simulation anchored to exact historical pool states. The SVB reference starts from the pre-crisis March 10 block. Behavioral inputs are explicit scenario assumptions; partial empirical response estimates are reported separately in Data & Contract Evidence.')
+    st.caption('Stylized multi-cohort behavioral simulation anchored to exact historical pool states. The SVB reference starts from the pre-crisis March 10 block. Behavioral inputs are explicit scenario assumptions; the effective-response estimator fails the zero-response holdout benchmark (0.17945 vs 0.08342 pp). It is not used as calibrated behavior. Full evidence is in Data & Contract Evidence.')
     reference=json.loads((ROOT/'svb_reference_fit.json').read_text())
     reference_mode=st.radio('Participant scenario',['SVB path-fitted reference','Custom counterfactual'],key='abm_mode')=='SVB path-fitted reference'
     if reference_mode:
@@ -334,7 +334,7 @@ def participant_experiment():
         pass  # Keep the custom submitted run separate from the frozen reference
         st.caption('Reference mode displays the frozen fitted request in read-only controls. Select Custom counterfactual to edit and run a new scenario. Pressure = '+format(req.redemption_pressure_pct,'.4f')+'% of assumed USD 1bn supply; arbitrage capital USD '+format(req.arbitrage_capital_usd,',.0f')+'.')
     else:
-        st.warning('Counterfactual stress, not an SVB reconstruction: 15% means USD 150m of global redemption demand under the USD 1bn assumed supply. Extreme pool exhaustion is possible and is not a historical price prediction.')
+        st.warning(f'Counterfactual stress, not an SVB reconstruction: {req.redemption_pressure_pct:.2f}% means USD {req.circulating_supply_usdc * req.redemption_pressure_pct / 100:,.0f} of global redemption demand under the USD {req.circulating_supply_usdc:,.0f} assumed supply. Extreme pool exhaustion is possible; this is not a historical price prediction.')
     canonical_file=ROOT/'canonical_benchmarks.json'
     if canonical_file.exists():
         benchmarks=json.loads(canonical_file.read_text())
@@ -355,7 +355,8 @@ def participant_experiment():
             status.update(label='Sensitivity grid complete',state='complete',expanded=False)
     submitted=req.model_dump(mode='json')
     saved=(reference['request'],reference['result']) if reference_mode else (submitted,cached_participant_path(submitted))
-    st.caption('Current path and sensitivity grid update together from the same request · '+request_fingerprint(req)[:12]+'. Run/Record stores a journal entry; no old scenario is substituted.')
+    st.caption('Active request SHA-256: '+request_fingerprint(req)+'. Path and grid use these exact inputs. Run/Record stores a journal entry; displayed inputs update the analysis immediately.')
+    st.write(f'**Active scenario:** {req.date} · {req.stress_asset} · pressure **{req.redemption_pressure_pct:.2f}%** · depth **{req.pool_liquidity_multiplier:.2f}×** · seed **{req.random_seed}**.')
     if saved and saved[0]==req.model_dump(mode='json'):
         result=saved[1]
         _start=result['initial_pool_implied_usdc_usd'];_summary=result['summary']
@@ -391,11 +392,11 @@ def participant_experiment():
     st.subheader('Sensitivity grid · same starting state and participant assumptions')
     metric=st.radio('Sensitivity measure',['Maximum move from initial (pp)','Maximum discount below USD 1 (%)'],key='abm_grid_metric')
     field='max_move_from_initial_pct' if metric.startswith('Maximum move') else 'max_depeg_depth_pct'
-    st.caption(str(len(phase['cells']))+' executed scenarios. Only pressure and depth vary; the selected coordinates are explicitly evaluated. Categorical cells do not imply interpolated thresholds between sampled pressures.')
+    st.caption('Every cell is labeled: 0.00 is a computed near-zero move, never missing data. '+str(len(phase['cells']))+' executed scenarios. Only pressure and depth vary; the selected coordinates are explicitly evaluated. Categorical cells do not imply interpolated thresholds between sampled pressures.')
     frame=pd.DataFrame(phase['cells'])
     grid=frame.pivot(index='liquidity_multiplier',columns='redemption_pressure_pct',values=field)
     x=[format(v,'.4g') for v in grid.columns];y=[format(v,'.4g') for v in grid.index]
-    fig=go.Figure(go.Heatmap(x=x,y=y,z=grid.values,colorscale='Blues',colorbar=dict(title='pp' if field=='max_move_from_initial_pct' else '%'),hovertemplate='Pressure %{x}%<br>Depth %{y}×<br>'+metric+': %{z:.6f}<extra></extra>'))
+    fig=go.Figure(go.Heatmap(x=x,y=y,z=grid.values,colorscale=[[0,'#15263b'],[.01,'#245c84'],[.1,'#29a6b0'],[.5,'#d3ae59'],[1,'#ef6c66']],zmin=0,text=grid.values,texttemplate='%{text:.2f}',textfont=dict(color='#eaf2ff'),colorbar=dict(title='pp' if field=='max_move_from_initial_pct' else '%'),hovertemplate='Pressure %{x}%<br>Depth %{y}×<br>'+metric+': %{z:.6f}<extra></extra>'))
     fig.add_trace(go.Scatter(x=[format(req.redemption_pressure_pct,'.4g')],y=[format(req.pool_liquidity_multiplier,'.4g')],mode='markers',marker=dict(symbol='square-open',size=21,color='#dfb969',line=dict(width=3)),name='Current path',hoverinfo='skip'))
     fig.update_layout(xaxis_title='Redemption pressure (% of assumed supply)',yaxis_title='Initial pool depth multiplier')
     fig.update_xaxes(type='category');fig.update_yaxes(type='category')
@@ -407,6 +408,11 @@ def participant_experiment():
         st.write(phase['metric_definition'])
         st.latex(r'\Delta P_{max}=100\max_t|P_t-P_0|,\qquad D_{max}=100\max(0,1-\min_t P_t)')
         st.caption('A move in percentage points of USD 1 differs from percentage return relative to the starting quote. Positive premium is not a discount. The USD reference is held fixed throughout the counterfactual.')
+    with st.expander('Local pressure audit · distinguish thresholds from stale state'):
+        from participant_comparison import pressure_audit
+        audit=pressure_audit(req)
+        st.table(pd.DataFrame(audit))
+        st.caption('Independent deterministic reruns at current pressure ±0.05 and ±0.10 percentage points. Threshold trading, gas profitability, finite capital and hourly queues can create non-monotone responses; these are model-rule discontinuities, not established empirical liquidity cliffs. Each row includes a separate request fingerprint. No smoothing or monotonicity is imposed.')
     json_export(phase,'matched-participant-sensitivity.json')
 
 
@@ -444,10 +450,10 @@ def validation():
         render_forecast_research(market_rows)
     with execution_tab:
         st.subheader('Validation status')
-        st.write('Forecast Lab reports threshold autoregression, chronological interval calibration and observed-covariate ablations. Co-TSFA and JEPA remain explicitly labeled experimental architectures; no trained result is implied. Exact-block solver evidence and effective-response estimation are published in Data & Contract Evidence.')
+        st.write('Forecast Lab reports threshold autoregression, chronological interval calibration and observed-covariate ablations. Co-TSFA and JEPA remain explicitly labeled experimental architectures; no trained result is implied. Exact-block solver evidence and a failed effective-response holdout experiment are published in Data & Contract Evidence.')
         table=[
             {'Component':'Curve execution model','Evidence available':'Historical balances, A, fee and block metadata; numerical consistency checks','What remains open':'Broader pools, additional blocks, token-rate edge cases and transaction-level reconciliation','Status':'Exact-block benchmark published'},
-            {'Component':'Rule-based participant model','Evidence available':'Explicit cohort rules, reproducible parameters and sensitivity experiments','What remains open':'Calibration to observed trading/redemption flows and held-out event testing','Status':'Uncalibrated'},
+            {'Component':'Rule-based participant model','Evidence available':'Exact pool anchor; explicit cohort rules; in-sample SVB price-path fit. Effective-response holdout MAE 0.17945 pp vs zero null 0.08342 pp (worse).' ,'What remains open':'Calibration to observed trading/redemption flows and held-out event testing','Status':'Scenario rules; SVB path fit in-sample only; structural validation absent'},
             {'Component':'Holdings scenarios','Evidence available':'Independent token paths and separate original-pool sale estimates','What remains open':'Joint price dynamics, correlations and synchronized valuation','Status':'Synthetic scenario'},
             {'Component':'Daily English brief','Evidence available':'Saved structured facts and generation timestamp','What remains open':'Source freshness, interval calibration and factual review','Status':'Deterministic econometric template'},
         ]
@@ -486,6 +492,8 @@ def validation():
         st.write('**3 · Forecast robustness.** Add event-level holdouts, interval coverage, stress-regime errors and multiple seeds before claiming predictive value.')
         st.write('**4 · Representation learning.** JEPA remains a proposed experiment. Compare persistence, a supervised backbone and the same backbone with pretraining on chronological splits. The architecture is a proposed controlled experiment, with no trained JEPA result currently reported.')
         st.caption('This roadmap describes future research, not current capabilities.')
+        from research_standards import render_standards
+        render_standards()
 
 try:
     {'Overview':overview,'Daily Brief':daily_brief,'Forecast Lab':forecast_lab,'Historical Research':historical,'Liquidity Stress Test':stress_test,'Mechanism Lab':mechanism_lab,'Data & Contract Evidence':empirical_evidence,'Experiment Journal':journal,'Models & Validation':validation}[page]()

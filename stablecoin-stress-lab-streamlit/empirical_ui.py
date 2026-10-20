@@ -56,6 +56,8 @@ def render_regime_study():
         st.latex(r'\alpha_{t+1}=\mathrm{clip}\{\alpha_t+0.02(0.10-\mathbf{1}[Y_t\notin C_t])\},\qquad S_\alpha(L,U;y)=U-L+\frac{2}{\alpha}(L-y)_++\frac{2}{\alpha}(y-U)_+')
         st.write('Coverage must be interpreted with width and Winkler score. A wide interval can cover a crisis while being uninformative. Chronos-2 is kept in its separate frozen-foundation comparison; no conformal score is fabricated for a model without the same residual history.')
         st.json(result['model_settings']);st.download_button('Download interval evaluation',json.dumps(result,indent=2),'interval-evaluation-'+run_id+'.json','application/json')
+    from research_standards import render_event_audit
+    render_event_audit()
     st.divider();st.subheader('Observed onchain covariate ablation · one-hour horizon')
     cov=artifact('covariate_results.json');score_table(cov['results'][asset]['scores'])
     st.write(cov['specification'])
@@ -70,6 +72,8 @@ def render_evidence():
     st.title('Data & Contract Evidence')
     m=artifact('manifest.json');cols=st.columns(4)
     for col,label,number in zip(cols,['State snapshots','Raw pool events','Hourly feature rows','Contract quote checks'],[m['state_count'],m['raw_event_count'],m['hourly_feature_count'],m['contract_quotes']]):col.metric(label,f'{number:,}')
+    from research_standards import render_scope
+    render_scope()
     coverage,solver,estimation=st.tabs(['Coverage & clocks','Exact-block get_dy','Effective response estimation'])
     with coverage:
         st.table(pd.DataFrame([
@@ -96,6 +100,8 @@ def render_evidence():
         st.download_button('Download raw quote benchmark',frame.to_csv(index=False),'curve-contract-validation.csv','text/csv')
     with estimation:
         fit=artifact('response_estimation.json');st.write(fit['method'])
+        skill=100*(1-fit['holdout_mae_pct']/fit['zero_response_mae_pct'])
+        st.error(f'Failed holdout validation: fitted response MAE {fit["holdout_mae_pct"]:.5f} pp exceeds zero-response MAE {fit["zero_response_mae_pct"]:.5f} pp (skill {skill:.1f}%). Retain the zero-response benchmark for prediction. These coefficients do not establish calibrated participant behavior and are not deployed into the ABM.')
         st.latex(r'w_{t+1}=c+\beta\,(100(1-P_t))_++\rho w_t+\epsilon_{t+1}')
         rows=[dict(Parameter=k,Estimate=v,Lower_90=fit['bootstrap_90'][k][0],Upper_90=fit['bootstrap_90'][k][1]) for k,v in fit['coefficients'].items()]
         st.table(pd.DataFrame(rows).style.format({k:'{:,.5f}' for k in ['Estimate','Lower_90','Upper_90']}))

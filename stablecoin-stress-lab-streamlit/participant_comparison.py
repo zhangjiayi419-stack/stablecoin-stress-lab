@@ -29,3 +29,18 @@ def matched_phase_diagram(request: AgentExperimentRequest):
 def selected_cell(phase,request):
     if phase['request_sha256']!=request_fingerprint(request):raise ValueError('Path and sensitivity grid have different submitted assumptions.')
     return next(c for c in phase['cells'] if c['liquidity_multiplier']==request.pool_liquidity_multiplier and c['redemption_pressure_pct']==request.redemption_pressure_pct)
+
+
+def pressure_audit(request):
+    """Direct reruns, independent of UI/session caches; preserve all non-pressure inputs."""
+    rows=[]
+    for pressure in sorted({round(min(50,max(0,request.redemption_pressure_pct+d)),8) for d in [-.10,-.05,0,.05,.10]}):
+        req=request.model_copy(update={'redemption_pressure_pct':pressure})
+        result=simulate_agents(req)
+        rows.append({'Pressure (%)':pressure,'Maximum move (pp)':result['summary']['max_move_from_initial_pct'],
+            'Discount below par (%)':result['summary']['max_depeg_depth_pct'],
+            'Arbitrage input (tokens)':result['summary']['total_arbitrage_input_volume'],
+            'Arbitrage-active hours':sum(s['arbitrage_input_amount']>0 for s in result['steps']),
+            'LP withdrawal (%)':result['summary']['lp_cumulative_withdrawal_pct'],
+            'Request SHA-256':request_fingerprint(req)})
+    return rows
