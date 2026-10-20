@@ -34,7 +34,7 @@ html,body,.stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"]{backg
 [data-testid="stHeader"]{background:rgba(8,14,23,.96);border-bottom:1px solid #1d2b3d}
 .stMainBlockContainer{max-width:1380px;padding-top:3rem;padding-bottom:2.7rem}
 h1,h2,h3{color:#e6eef9;letter-spacing:-.03em}h1{font-weight:600!important;font-size:2.25rem!important;line-height:1.2!important}h2{font-size:1.45rem!important}h3{font-size:1.08rem!important;font-weight:600!important}
-.stMarkdown p{line-height:1.65}.stCaption,[data-testid="stCaptionContainer"]{color:#92a5bd}
+.stMarkdown p{line-height:1.65}.stCaption,[data-testid="stCaptionContainer"],[data-testid="stCaptionContainer"] p,[data-testid="stCaptionContainer"] span{color:#becde0!important;opacity:1;font-size:.8rem;line-height:1.65}
 a{color:#82bdff}a:hover{color:#b7d8ff}
 [data-testid="stSidebar"]{background:#0b131f;color:#dce7f5;border-right:1px solid #213148}
 [data-testid="stSidebar"] [data-testid="stCaptionContainer"]{color:#8fa4be}

@@ -89,7 +89,7 @@ with st.sidebar:
     st.markdown('<div class="brand-mark">◈</div><div class="brand">Stablecoin Stress Lab</div><div class="sidebar-kicker">LIQUIDITY RESEARCH</div>',unsafe_allow_html=True)
     page=st.radio('Research workspace',PAGES,key='workspace',label_visibility='collapsed')
     st.caption('A focused workspace for understanding price dislocations and liquidity under stress.')
-    st.markdown(f'<div class="sidebar-footer">USD observations<br><strong>{market_date} UTC</strong><br><br>Historical pool data<br><strong>Ethereum · Curve 3pool</strong><br><br>Research prototype<br>No trades or wallet connection</div>',unsafe_allow_html=True)
+    st.markdown(f'<div class="sidebar-footer">Latest market-feed observations<br><strong>{market_date} UTC</strong><br><br>Historical pool data<br><strong>Ethereum · Curve 3pool</strong><br><br>Research prototype<br>No trades or wallet connection</div>',unsafe_allow_html=True)
 
 
 def overview():
@@ -115,7 +115,7 @@ def daily_market_context():
 
 def daily_brief():
     from daily_research_ui import render_daily_research
-    render_daily_research()
+    render_daily_research(market_as_of=market_date,market_generated_at=(saved_report() or {}).get('facts',{}).get('generated_at_utc'))
     st.divider()
     daily_market_context()
 

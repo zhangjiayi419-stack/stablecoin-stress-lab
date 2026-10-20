@@ -12,7 +12,7 @@ def clean_time(value):
     return datetime.fromisoformat(value.replace('Z','+00:00')).astimezone(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')
 
 
-def render_daily_research():
+def render_daily_research(market_as_of=None, market_generated_at=None):
     st.markdown('<div class="eyebrow">02 / Econometric bulletin</div>',unsafe_allow_html=True)
     st.title('Daily Research Brief')
     data=artifact('econometric_results.json');rows=[]
@@ -22,7 +22,13 @@ def render_daily_research():
             '7D SETAR forecast':f['prediction_usd'],'Nominal 90% interval':f"[{f['lower_usd']:.6f}, {f['upper_usd']:.6f}]",
             'OOS MAE (bps)':score['MAE_bps'],'Empirical coverage (%)':score['Coverage_pct'],'Winkler score (bps)':score['Winkler_bps']})
     dates=sorted({r['Observation date (UTC)'] for r in rows})
-    st.caption('Observations: '+', '.join(dates)+' UTC · Research artifact generated: '+clean_time(data['generated_at_utc']))
+    st.markdown('**Forecast snapshot — observations through:** '+', '.join(dates)+' UTC')
+    st.caption('Forecast evaluation generated at: '+clean_time(data['generated_at_utc']))
+    if market_as_of:
+        st.markdown('**Latest market feed — observations through:** '+market_as_of+' UTC')
+        if market_generated_at:st.caption('Market feed job generated at: '+clean_time(market_generated_at))
+        if market_as_of>dates[-1]:
+            st.info('Two observation clocks: the sidebar and Market context use the latest daily market feed; the SETAR/conformal table below is a frozen research snapshot and has not been recomputed through that newer date. Observation dates are not generation timestamps.')
     age=(datetime.now(timezone.utc).date()-datetime.fromisoformat(dates[-1]).date()).days
     if age>2:st.warning(f'This is a dated research snapshot ({age} days old), not today’s market bulletin.')
     st.write('**Generation engine:** deterministic, source-linked econometric template. Numerical tables are generated from executed research artifacts; no language model is used to invent commentary.')

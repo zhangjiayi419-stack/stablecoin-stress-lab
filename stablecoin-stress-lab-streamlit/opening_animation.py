@@ -1,17 +1,34 @@
-"""Optional, skippable 4.2-second synthetic intro, once per Streamlit session."""
-import json
+"""Native CSS intro: no iframe/JavaScript dependency or reserved iframe space."""
 import streamlit as st
-import streamlit.components.v1 as components
 from mechanism_engine import Pool
 
 
+def opening_markup(sequence=0):
+    quotes=[]
+    for fraction in [0,.15,.35,.5,.6]:
+        p=Pool('Curve',20e6);p.trade(20e6*fraction)
+        quotes.append(p.price())
+    return '''<style>
+.opening-demo{position:relative;border:1px solid #3a536d;border-radius:6px;background:#0d1724;padding:18px 20px;margin-bottom:8px;min-height:142px;box-sizing:border-box;overflow:hidden}
+.opening-label{font:10px monospace;letter-spacing:.08em;color:#b3c9dd}.opening-scene{animation:intro-scene 4.2s linear both}.opening-price{font:600 30px monospace;color:#e6f2ff;margin:10px 0}.opening-price:after{content:'$1.00';animation:intro-price 4.2s linear both}.opening-depth{height:17px;border-radius:3px;background:#284d50;overflow:hidden}.opening-depth-fill{height:100%;width:50%;background:#70b7ff;animation:intro-imbalance 4.2s ease-in-out both}.opening-note{color:#c0d2e3;font-size:12px;margin-top:10px}.opening-end{position:absolute;inset:40px 20px auto;font-size:21px;line-height:1.5;color:#e6f2ff;animation:intro-end 4.2s linear both}
+@keyframes intro-price{0%,20%{content:'$1.00'}35%{content:'__Q1__'}50%{content:'__Q2__'}65%{content:'__Q3__'}80%,100%{content:'__Q4__'}}
+@keyframes intro-imbalance{0%,20%{width:50%}40%{width:65%}60%{width:83%}80%,100%{width:99%}}
+@keyframes intro-scene{0%,84%{opacity:1}94%,100%{opacity:0}}
+@keyframes intro-end{0%,88%{opacity:0}100%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.opening-scene{display:none;animation:none}.opening-end{position:static;opacity:1;animation:none;margin:14px 0}.opening-demo{min-height:0}}
+</style><section class="opening-demo" aria-label="Opening liquidity illustration"><div class="opening-label">ILLUSTRATIVE FIXED-DEPTH POOL · NOT HISTORICAL DATA</div><div class="opening-scene"><div class="opening-price" aria-label="Illustrative quote falls from one dollar"></div><div class="opening-depth"><div class="opening-depth-fill"></div></div><div class="opening-note">A $12m sale enters a $20m pool. Output reserves shrink; the quote falls.</div></div><div class="opening-end">A price near $1 does not mean you can sell at $1.</div></section>'''.replace('__Q1__',f'${quotes[1]:.4f}').replace('__Q2__',f'${quotes[2]:.4f}').replace('__Q3__',f'${quotes[3]:.4f}').replace('__Q4__',f'${quotes[4]:.4f}').replace('intro-',f'intro-{sequence}-')
+
+
+def replay_opening():
+    st.session_state['_home_intro_replay']=True
+
+
 def render_opening():
-    if st.session_state.get('_home_intro_seen',False):return
+    show=not st.session_state.get('_home_intro_seen',False) or st.session_state.pop('_home_intro_replay',False)
     st.session_state['_home_intro_seen']=True
-    frames=[]
-    for i in range(41):
-        pool=Pool('Curve',20e6);pool.trade(12e6*i/40)
-        x,y=pool.balances();frames.append(dict(price=pool.price(),share=x/(x+y)*100))
-    markup='''<!doctype html><html><head><style>body{margin:0;background:#0d1724;color:#dceaff;font:14px system-ui}section{border:1px solid #30445c;border-radius:6px;padding:16px}header{display:flex;justify-content:space-between;align-items:center;color:#91a7be;font:10px monospace;letter-spacing:.08em}button{color:#c4d8ed;background:transparent;border:1px solid #456284;border-radius:4px;padding:5px 12px;cursor:pointer}.quote{font:600 32px monospace;margin:10px 0}.bar{display:flex;height:16px;background:#327e70;border-radius:3px;overflow:hidden}.sell{width:50%;background:#447eb8}#label{margin:10px 0 0;color:#a6bdd3;font-size:12px}#end{display:none;font-size:21px;line-height:1.5;padding:20px 0 6px}</style></head><body><section><header><span>ILLUSTRATIVE POOL · NOT A HISTORICAL REPLAY</span><button id="skip">Skip intro →</button></header><div id="scene"><div class="quote" id="price">$1.00</div><div class="bar"><div class="sell" id="share"></div></div><p id="label">The quote is near $1.00. Then a large sell order arrives.</p></div><div id="end">A price near $1 does not mean you can sell at $1.</div></section><script>const frames=__FRAMES__;let stopped=false,start=null;function finish(){stopped=true;document.getElementById('scene').style.display='none';document.getElementById('end').style.display='block';document.getElementById('skip').style.display='none'}document.getElementById('skip').onclick=finish;function tick(now){if(stopped)return;if(start===null)start=now;let t=(now-start)/4200;if(t>=1){finish();return}let u=Math.max(0,Math.min(1,(t-.2)/.65)),f=frames[Math.round(u*40)];document.getElementById('price').textContent='$'+f.price.toFixed(4);document.getElementById('share').style.width=f.share+'%';if(t>.2)document.getElementById('label').textContent='Illustrative $12m sale into a fixed $20m pool: output reserves shrink, the quote falls.';requestAnimationFrame(tick)}if(matchMedia('(prefers-reduced-motion: reduce)').matches)finish();else requestAnimationFrame(tick);</script></body></html>'''.replace('__FRAMES__',json.dumps(frames))
-    if hasattr(st,'iframe'):st.iframe(markup,height=190,alt='Optional opening: sell order, depleted reserves and falling quote')
-    else:components.html(markup,height=190,scrolling=False)
+    if show:
+        sequence=st.session_state.get('_intro_sequence',0)+1
+        st.session_state['_intro_sequence']=sequence
+        st.markdown(opening_markup(sequence),unsafe_allow_html=True)
+        st.button('Skip / close opening',key='intro_close',help='Dismiss the illustration immediately. The homepage stays available below.')
+    st.button('Replay opening illustration',key='intro_replay',on_click=replay_opening,help='Replay the 4.2-second illustration. Automatic playback happens once per session.')

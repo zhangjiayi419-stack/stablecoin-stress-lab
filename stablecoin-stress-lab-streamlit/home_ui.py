@@ -22,12 +22,12 @@ def render_cover(route):
     from opening_animation import render_opening
     render_opening()
     st.markdown('''<style>
-.research-hero{padding:22px 0 12px;border-top:1px solid #25344a}.hero-label{font:11px monospace;letter-spacing:.16em;color:#70b7ff}.hero-title{font-size:clamp(36px,5vw,64px);line-height:1.08;letter-spacing:-.045em;font-weight:650;margin:18px 0;color:#e5edf7}.hero-description{font-size:19px;line-height:1.55;color:#c1d0df;max-width:800px;margin:0 0 12px}.hero-purpose{font-size:14px;line-height:1.65;color:#91a7be;max-width:800px}.finding-value{font:600 clamp(29px,3vw,42px) monospace;letter-spacing:-.04em;color:#dcecff;margin:8px 0 14px}.finding-label{font:10px monospace;letter-spacing:.12em;color:#83a6c9;text-transform:uppercase}
+.research-hero{padding:22px 0 12px;border-top:1px solid #25344a}.hero-label{font:11px monospace;letter-spacing:.16em;color:#70b7ff}.hero-title{font-size:clamp(36px,5vw,64px);line-height:1.08;letter-spacing:-.045em;font-weight:650;margin:18px 0;color:#e5edf7}.hero-description{font-size:19px;line-height:1.55;color:#c1d0df;max-width:800px;margin:0 0 12px}.hero-purpose{font-size:14px;line-height:1.65;color:#91a7be;max-width:800px}.finding-value{font:600 clamp(29px,3vw,42px) monospace;letter-spacing:-.04em;color:#dcecff;margin:8px 0 14px}.finding-label{font:11px monospace;letter-spacing:.12em;color:#b8cde3;text-transform:uppercase}
 </style><section class="research-hero"><div class="hero-label">01 / RESEARCH WORKSPACE</div><h1 class="hero-title">Stablecoin Stress Lab</h1><p class="hero-description">A price near $1 does not mean you can sell at $1.</p><p class="hero-purpose">A research lab for understanding how stablecoin sell-offs strain liquidity, trigger feedback loops, and challenge price forecasts.</p></section>''',unsafe_allow_html=True)
     st.subheader('Key Findings')
     f=findings();cols=st.columns(3)
     cards=[('Observed stress',f"${f['low']:.4f}",'USDC’s sampled low during the March 2023 SVB shock.',f"{f['quotes']} historical contract quotes reproduced within 0.000001 bps."),
-           ('Daily forecasting',f"+{f['improvement']:.1f}%",'Lower MAE than persistence for gradient boosting in the SVB daily evaluation.',f"{f['targets']} shared one-day targets. One event; not a general performance guarantee."),
+           ('Daily forecasting',f"+{f['improvement']:.1f}%",'Lower MAE than persistence for gradient boosting in the SVB daily evaluation.',f"Fixed SVB evaluation: **{f['targets']} shared one-day targets**. One event; not a general performance guarantee."),
            ('Negative results',f"{f['covariate_improvement']:.1f}%",'The onchain-covariate model underperformed persistence in the hourly USDC test.','Unsuccessful models stay in the leaderboard. No results are hidden to improve the ranking.')]
     for col,(label,value,text,note) in zip(cols,cards):
         with col:
@@ -50,5 +50,6 @@ def render_cover(route):
     with st.expander('New to the lab? Follow one question'):
         st.markdown('1. **Observe** the March 2023 price dislocation.\n2. **Inspect** the historical pool and its data sources.\n3. **Test** a sale and a liquidity assumption.\n4. **Check** model errors, validation and limitations.')
     st.subheader('About')
-    st.markdown('**JIAYI ZHANG** · University of Macau\n\nA reproducible stablecoin liquidity and forecasting research project.')
+    st.markdown('**JIAYI ZHANG** · University of Macau\n\nI study accounting and am developing a quantitative research practice with an interest in C++ and computational finance. I built this lab to investigate a practical question: when a stablecoin trades near $1, how much can actually be sold near that price?\n\nThe project connects balance-sheet thinking with market microstructure, reproducible simulation, and honest model evaluation—including negative results.')
+    st.caption('Research note: in preparation. A PDF link will be added when the note is available.')
     st.markdown('[GitHub]('+REPO+') · [Research methods & data]('+REPO+'/blob/main/stablecoin-stress-lab-streamlit/EMPIRICAL_RESEARCH.md) · [zhangjiayi419@gmail.com](mailto:zhangjiayi419@gmail.com)')
