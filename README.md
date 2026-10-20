@@ -1,57 +1,61 @@
 # Stablecoin Stress Lab
 
-A research workspace for understanding stablecoin price dislocations and liquidity under stress. The central question is how a hypothetical sale would execute in a recorded Curve 3pool state, and how an explicit change in pool depth changes the estimate.
+An academic research workspace for stablecoin price dislocations, execution depth,
+and explicit multi-cohort liquidity scenarios. Author: **Jiayi Zhang, University of Macau**.
 
-[Open the live Streamlit application](https://stablecoin-stress-lab-bocqwkh5biv65pbodvlaqz.streamlit.app/)
+[Open the Streamlit app](https://stablecoin-stress-lab-bocqwkh5biv65pbodvlaqz.streamlit.app/)
 
-## Workspaces
+## Evidence before claims
 
-| Workspace | Research question | Tools |
-| --- | --- | --- |
-| Overview | What do the latest observations show? | Dated USD snapshots, 30-day deviation chart and a guided entry point |
-| Daily Brief | What does the daily research brief say? | Dedicated English brief, observation and generation timestamps, source records and Markdown / JSON downloads |
-| Historical Research | What happened during a stress event? | Three curated cases, daily USD prices, sparse pool-composition observations and source trails |
-| Liquidity Stress Test | How does a sale or explicit shock change the model output? | USDC/USDT sale estimates, proportional liquidity counterfactuals, holdings scenarios and optional participant sensitivity experiments |
-| Models & Validation | What evidence supports the estimate? | Chronological AR(1) vs persistence evaluation, model specifications, validation gaps, provenance and research roadmap |
+- Daily SVB full-window gradient boosting MAE skill +23.0%: **55 shared targets,
+  only one >100 bps stress target**. On that target GB error is 497.1 bps versus
+  persistence 445.0 bps. This is not evidence of superior crisis forecasting.
+- Hourly GB + observed covariates skill −59.8% versus persistence; price-only GB
+  −62.2%. Covariates reduce GB MAE by about 1.48%, but both versions lose.
+- New executed retrospective daily audits cover Terra May 2022, FTX November 2022
+  and SVB March 2023 using identical rolling specifications and event-only scoring.
+  This is post-hoc historical analysis, not preregistered external validation.
+- Exact-block StableSwap checks: 5 blocks × 3 sizes × 2 directions = 30 historical
+  contract `get_dy` quotes; maximum relative error below 0.000001 bps for tested cases.
+- The participant SVB price path is fitted **in-sample**. Structural ABM behavior
+  and generalization across pools/events remain unvalidated.
+- Effective-response holdout MAE **0.17945 pp** versus zero-response null
+  **0.08342 pp**: failed validation. The fitted coefficients are not deployed as
+  calibrated participant behavior.
 
-The interface separates observed data, estimates conditional on historical pool states, and hypothetical scenarios. Advanced controls and raw exports are available without dominating the beginner workflow.
+## Data scopes and clocks
 
-## Run locally
+The empirical collection contains 346 Curve 3pool state records during Jan–Apr
+2023 (daily plus crisis-hourly cutoffs); the separate replay catalog contains 73
+sparse historical state records. Case counts are filtered subsets of the replay
+catalog, not conflicting estimates of the same population. Provider USD samples,
+block state, event intervals and forecast targets use separate explicit clocks.
 
-Python 3.10 or newer is required. From the repository root:
+No issuer PD/LGD is estimated. The >100 bps two-sided peg-deviation label is a
+sampled market stress convention, not issuer default. Execution shortfall is
+order- and block-specific, and is not LGD.
 
-```bash
+## Reproduce and cite
+
+Use tag **v0.4.0-evidence-audit**, CPython 3.13, and the pinned runtime environment.
+
+```sh
 cd stablecoin-stress-lab-streamlit
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-streamlit run streamlit_app.py
+python3.13 -m venv .venv
+.venv/bin/pip install -r requirements-lock.txt
+.venv/bin/python verify_release.py
+.venv/bin/python -m unittest discover -s tests -q
+.venv/bin/python build_event_audit.py
+.venv/bin/python -m streamlit run streamlit_app.py
 ```
 
-## Data and interpretation
+[Full reproduction protocol, limitations and bibliography](stablecoin-stress-lab-streamlit/REPRODUCIBILITY.md)
+· [CITATION.cff](CITATION.cff) · [MIT code license](LICENSE)
 
-Recent USD observations use CoinGecko, with the last sampled observation in each completed UTC day. The bundled historical USD series uses hourly observations aggregated by UTC day; sampled lows and daily last observations are different measures. Neither is exchange OHLC.
+Seeds: 419 for forecasting/bootstrap builders; ABM runs expose their request seed
+and SHA-256. Data hashes and source hashes are in the release manifest. Optional
+foundation weights are not included in the runtime lock; their results are frozen
+artifacts. Mutable daily market reports are excluded from the release hash set.
 
-The 73 stored Ethereum Curve 3pool snapshots carry actual block timestamps and source metadata. Missing dates are not interpolated. Pool balances are token quantities, not dollar-valued reserves. Pool-block times and daily USD prices are not synchronized.
-
-## Models and evidence
-
-- **Execution:** a floating-point three-token StableSwap solver, with recorded A, balances and fees. Numerical checks cover gross-output invariant preservation, fee arithmetic, scaling and trade-size/depth sensitivity. Agreement with archived contract `get_dy` outputs and realized transactions remains unvalidated.
-- **Scenarios:** rule-based holder cohorts, issuer processing, arbitrage and liquidity withdrawals. Parameters are explicit and uncalibrated. USDC/USDT holdings paths combine independent token simulations, not a joint market model.
-- **Forecast research:** a fitted AR(1) baseline with one-day expanding-window evaluation against persistence. Conditional 90% residual-bootstrap intervals omit parameter uncertainty; multi-day coverage has not been independently validated. No predictive superiority is assumed.
-- **JEPA:** a research proposal, not a trained or deployed model.
-
-## Daily English brief
-
-GitHub Actions refreshes the saved price snapshot and brief at 01:15 UTC (09:15 Asia/Shanghai; scheduling may be delayed). Configure `DASHSCOPE_API_KEY` in repository Actions secrets for optional Alibaba Qwen commentary. When unavailable, the report explicitly uses a deterministic English statistical template. Failed market-data updates preserve the previous dated report.
-
-The public app reads saved reports. Visitors cannot trigger paid model calls with the owner's credentials. Setup details are in [START_HERE.md](stablecoin-stress-lab-streamlit/START_HERE.md).
-
-## Checks
-
-```bash
-cd stablecoin-stress-lab-streamlit
-python -m unittest discover -s tests -v
-```
-
-Research prototype. The application does not execute trades, estimate a calibrated probability of safety, or provide statistical VaR. Scenario losses, original-pool sale estimates and historical price observations have distinct meanings.
+Third-party data retains provider terms. This research software does not execute
+trades or establish future model performance. Contact: zhangjiayi419@gmail.com.

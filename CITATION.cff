@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "Please cite this software release and the dataset fingerprint used. This is not a peer-reviewed paper."
+title: "Stablecoin Stress Lab: evidence audit"
+type: software
+authors:
+  - family-names: Zhang
+    given-names: Jiayi
+    affiliation: "University of Macau"
+version: 0.4.0-evidence-audit
+date-released: 2026-10-20
+url: "https://github.com/zhangjiayi419-stack/stablecoin-stress-lab"
+repository-code: "https://github.com/zhangjiayi419-stack/stablecoin-stress-lab"
+license: MIT
