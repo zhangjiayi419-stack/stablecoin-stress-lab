@@ -1,0 +1,30 @@
+{
+  "version": "cross-event-1.0",
+  "frozen_before_new_collection_utc": "2026-10-21",
+  "design": "Retrospective forward event transfer; specifications fixed before inspecting new experiment scores. Events were previously viewed; not preregistered or an untouched prospective test.",
+  "events": {"Terra_2022_05": "2022-05-12", "FTX_2022_11": "2022-11-09", "SVB_2023_03": "2023-03-11"},
+  "window_hours": [-72, 72],
+  "assets": ["USDC", "USDT"],
+  "horizon_hours": 1,
+  "folds": [
+    {"train_events": ["Terra_2022_05"], "test_event": "FTX_2022_11"},
+    {"train_events": ["Terra_2022_05", "FTX_2022_11"], "test_event": "SVB_2023_03"}
+  ],
+  "terra_note": "Terra is the earliest training event, not scored using future events.",
+  "models": ["Persistence / zero price change", "GB price-only", "GB + observed covariates"],
+  "gb_settings": {"n_estimators":50,"max_depth":2,"min_samples_leaf":5,"loss":"huber","learning_rate":0.05,"random_state":419},
+  "price_features": ["z_t","z_t_minus_1","z_t_minus_2","z_t_minus_6","mean_last_7","std_last_7","z_t_minus_z_t_minus_1"],
+  "observed_covariates": ["imbalance_ratio","volume_spike","slippage_slope_bps_per_million","lp_add_pct_tvl","lp_remove_multi_pct_tvl","lp_remove_one_events","net_invariant_withdrawal_proxy_pct","base_fee_gwei"],
+  "volume_baseline_hours":24,
+  "price_alignment": "last provider sample <= cutoff, max age 7200s, no future samples or interpolation",
+  "flow_alignment": "known Curve logs from previous state block exclusive to current state block inclusive; all subranges <=100 blocks; no capped/incomplete intervals accepted",
+  "gas_definition":"baseFeePerGas of the cutoff state block in gwei; not transaction-paid or average gas price",
+  "lp_definition":"multicoin liquidity amounts marked with cutoff-known USD prices; single-coin withdrawal token identity unavailable so event count only; invariant decline is confounded by fees/A, not identified LP flow",
+  "prediction_freeze":"fit on past events only, before test event; no test-event fitting, residual updates or tuning",
+  "calibration":"last 32 chronological training-event examples reserved; fit on all earlier examples; frozen 90% absolute-residual conformal interval, finite-sample ceil((n+1)*0.9) rank; no coverage guarantee under event shift",
+  "metrics":["MAE_bps","RMSE_bps","Max_error_bps","Stress_targets","Stress_MAE_bps","Coverage_pct","Mean_width_bps","Winkler_bps","MAE_skill_vs_persistence_pct"],
+  "stress_definition":"abs(actual USD price - 1) > 0.01; not issuer default",
+  "missing_data":"exclude and record gaps, never fill with synthetic observations",
+  "seed":419,
+  "structural_abm":"Not fitted or validated by this forecast experiment"
+}

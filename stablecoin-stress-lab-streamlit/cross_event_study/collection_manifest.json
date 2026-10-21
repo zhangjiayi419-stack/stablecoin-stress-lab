@@ -1,0 +1,25 @@
+{
+  "generated_at_utc": "2026-10-21T08:55:42Z",
+  "new_price_observations": 1152,
+  "all_price_observations": 1728,
+  "gas_header_count": 435,
+  "pool_events": 88031,
+  "events": {
+    "Terra_2022_05": 41509,
+    "FTX_2022_11": 9790,
+    "SVB_2023_03": 36732
+  },
+  "completed_log_intervals": 288,
+  "failed_intervals": 0,
+  "raw_shards": [
+    "raw_responses_00.jsonl.gz",
+    "raw_responses_01.jsonl.gz",
+    "raw_responses_02.jsonl.gz",
+    "raw_responses_03.jsonl.gz"
+  ],
+  "raw_response_count": 1310,
+  "svb_reused_source_sha256": "c9e65a37872f37bc0232640712bb91c2576cee7b14cc326790ca1d55d5b61f2f",
+  "svb_price_source_sha256": "5654b91d9bebcddd2aa4211f913e0276b13a190b135babc6ff16cfb3062c03dd",
+  "state_source_sha256": "0908a6fe9d8a8890070349a0daa20aab3b3ed5d135238ce2cc56f88658cd7cb1",
+  "protocol_sha256": "4018acb0344a2a3c4b9cb577140f126f8a7a78b322730683da7cfd5ed1fb69d2"
+}

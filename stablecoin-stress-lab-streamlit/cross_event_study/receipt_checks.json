@@ -1,0 +1,44 @@
+[
+  {
+    "event": "Terra_2022_05",
+    "transaction_hash": "0x9cbfe3536d0f695bc36e515fdddc03fd78f2ec7868ff5a8da455020841ffb028",
+    "log_index": "0x31",
+    "block_number": 14759147,
+    "passed": true
+  },
+  {
+    "event": "Terra_2022_05",
+    "transaction_hash": "0x9fdc5d4bf7db21de59d53373274ea982360d12701eb08ba7ac8ecd16b0659f4f",
+    "log_index": "0x16",
+    "block_number": 14761001,
+    "passed": true
+  },
+  {
+    "event": "FTX_2022_11",
+    "transaction_hash": "0x48515668f46b270f3f7d747a71d82f69224e25057b55eef17e927c8950fc26cd",
+    "log_index": "0x9",
+    "block_number": 15936125,
+    "passed": true
+  },
+  {
+    "event": "FTX_2022_11",
+    "transaction_hash": "0x5e5621d31a776be10db00463bee4cf23ad423ede7cb08de69e5324e49b2c6eb5",
+    "log_index": "0x31",
+    "block_number": 15939837,
+    "passed": true
+  },
+  {
+    "event": "SVB_2023_03",
+    "transaction_hash": "0x98257f8cc97a4121b6f185bd867d6143ce0222c2f2c9a96449d7ef0a83013376",
+    "log_index": "0x3",
+    "block_number": 16803618,
+    "passed": true
+  },
+  {
+    "event": "SVB_2023_03",
+    "transaction_hash": "0x31cf6c009723a3729dda14cce337dc3b6341d20ee312329bc2851650bf46d12b",
+    "log_index": "0x21",
+    "block_number": 16808786,
+    "passed": true
+  }
+]
