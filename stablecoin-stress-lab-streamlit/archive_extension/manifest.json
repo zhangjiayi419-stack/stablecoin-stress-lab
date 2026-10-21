@@ -1,0 +1,70 @@
+{
+  "dataset": "Curve 3pool multi-event historical extension",
+  "created_at_utc": "2026-10-21T04:48:18Z",
+  "chain_id": 1,
+  "contract": "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",
+  "rpc": "https://eth.drpc.org",
+  "requested_cutoffs": 843,
+  "successful_cutoffs": 843,
+  "failed_cutoffs": 0,
+  "unique_blocks": 843,
+  "new_blocks_vs_prior_73_and_346": 662,
+  "per_event": {
+    "Terra_2022_05": {
+      "cutoff_observations": 233,
+      "unique_blocks": 233,
+      "new_blocks": 232,
+      "start": "2022-04-28T00:00:00Z",
+      "end": "2022-05-26T00:00:00Z"
+    },
+    "FTX_2022_11": {
+      "cutoff_observations": 233,
+      "unique_blocks": 233,
+      "new_blocks": 232,
+      "start": "2022-10-26T00:00:00Z",
+      "end": "2022-11-23T00:00:00Z"
+    },
+    "SVB_2023_03": {
+      "cutoff_observations": 377,
+      "unique_blocks": 377,
+      "new_blocks": 198,
+      "start": "2023-02-25T00:00:00Z",
+      "end": "2023-03-25T00:00:00Z"
+    }
+  },
+  "maximum_solver_relative_error_bps": 1.6196819536153977e-08,
+  "sampling": "6-hour grid over event \u00b114d; hourly over \u00b13d; SVB Mar11\u201313 additionally every15min. Both endpoints included.",
+  "alignment": "block timestamp <= cutoff < next block timestamp, verified using RPC headers. All eth_call state at the same block number.",
+  "limitations": [
+    "One pool only; more timestamps do not add independent events.",
+    "Pool amounts are tokens, not independently USD-valued TVL.",
+    "No USD-price path, swap/LP-event collection or behavioral calibration is included in this extension.",
+    "Floating-point solver is checked only for 1m USDC to USDT at each collected state.",
+    "Prior catalog is copied for reference; it is not counted as newly collected data."
+  ],
+  "files": {
+    "prior_73_replay_catalog.csv": "80179a004bf7ec4654894c25255cf38990cdb0002a216eaad280ea5b847c378d",
+    "prior_346_states.json": "af313c8cec825de76420a150cb832075b25c043c2619c43cc67586d54197904d",
+    "new_unique_pool_states.csv": "d7c7f48b819bef58716dc6f7593a3d2115be12b24ea5ed23af3f2b29bf431298",
+    "stable_swap_solver.py": "50021578bf1e8f4216aa7eeb0a95f3e0ccdd1f4bd021a5367712247249729fe5",
+    "collect_snapshots.py": "29a6f8fc1838ffe81d72bf2fb421a8483873f6c52b517940fd1201e2c915df95",
+    "validate_snapshots.py": "b0dd891968a59fe7d748e3ae81a7dd039fa2f3363b4a7d42ed8aa53964fed11a",
+    "unique_pool_states.csv": "6a12d5baf3d16cd5d98599b60b2845be5505f69dbe03cca2070d351cac9a45f2",
+    "unique_pool_states.json": "0908a6fe9d8a8890070349a0daa20aab3b3ed5d135238ce2cc56f88658cd7cb1",
+    "cutoff_observations.json": "0908a6fe9d8a8890070349a0daa20aab3b3ed5d135238ce2cc56f88658cd7cb1",
+    "\u91c7\u96c6\u5b8c\u6210\u7edf\u8ba1.md": "e695eaa9f13370e6226a778a51e6f0788dbec9bfd819dcbb210458b82e833c3a",
+    "new_unique_pool_states.json": "dd723106d9c792a31efa55a9686901ee3be60b032f85dcf7faa36fff654598c6",
+    "independent_provider_crosschecks.json": "124753b946d7fbb0eb7d335dcd45bfd5b2a643d4914ea42a81fe84686face831",
+    "README_\u5148\u8bfb\u6211.md": "b1ab1314258cfcabf4f0560bfa52d315c4c15d158956b920c204486ac374651a",
+    "cutoff_observations.csv": "6a12d5baf3d16cd5d98599b60b2845be5505f69dbe03cca2070d351cac9a45f2",
+    "raw_responses.jsonl.gz": "4a7ea7defb2696196373eea5765107c420bd3c87b5ea35e5c54aa3675490cb0f",
+    "new_snapshots_replay_format.csv": "17ca2c2151fd62bc89f1f6d161582e1c47c0ca6ff57d0c90b3f1fc088b8feb79",
+    "failed_cutoffs.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "crosscheck_provider.py": "1bebf9001aa10537ac949e36d5176e049363b102b13fbd3cf3ab33d23bc4fb5f"
+  },
+  "independent_provider_crosscheck": {
+    "provider": "https://eth-mainnet.public.blastapi.io",
+    "checks": 6,
+    "passed": 6
+  }
+}
