@@ -6,7 +6,7 @@ authors:
   - family-names: Zhang
     given-names: Jiayi
     affiliation: "University of Macau"
-version: 0.5.0-history-archive
+version: 0.6.0-cross-event
 date-released: 2026-10-21
 url: "https://github.com/zhangjiayi419-stack/stablecoin-stress-lab"
 repository-code: "https://github.com/zhangjiayi419-stack/stablecoin-stress-lab"

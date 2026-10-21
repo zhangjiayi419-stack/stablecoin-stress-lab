@@ -73,3 +73,7 @@ The original 73 replay anchors, 346-state empirical study and fitted SVB
 participant case remain frozen. Added snapshots do not imply forecast retraining,
 structural calibration, cross-pool validation or independent crisis samples.
 For this extension, use tag `v0.5.0-history-archive` and its content manifest.
+
+## Cross-event evidence — v0.6.0
+
+Forecast Lab now defaults to **Forward event transfer**: Terra→FTX and Terra+FTX→SVB, with 431 aligned hourly feature rows and strictly preceding fit/calibration data. USDC covariate GB improves FTX MAE by 14.38% versus persistence but loses by 323.18% in SVB, with only 50% interval coverage there. All losses and stress-subset metrics are retained. This is retrospective, single-pool evidence. See [protocol, results and reproduction](stablecoin-stress-lab-streamlit/CROSS_EVENT_RESEARCH.md).
