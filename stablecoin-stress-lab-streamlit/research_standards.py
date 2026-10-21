@@ -12,7 +12,8 @@ def scope_rows():
     replay=load_pool_state()
     from snapshot_archive import load_archive
     extension,extension_manifest=load_archive()
-    return [dict(Collection='Multi-event archive extension',Count=len(extension),Unit='Unique exact-block states; 662 new beyond prior collections',Scope='Terra / FTX / SVB ±14d; 6-hour / hourly / SVB 15-minute sampling; not substituted into frozen studies'),dict(Collection='Empirical Curve 3pool states',Count=len(states),Unit='State records; mixed daily/hourly requested cutoffs',Scope='Jan–Apr 2023; separate empirical collection; repeated block cutoffs may occur'),
+    transfer=json.loads((ROOT/'cross_event_study/manifest.json').read_text())
+    return [dict(Collection='Cross-event aligned covariates',Count=transfer['feature_rows'],Unit='Hourly rows across Terra / FTX / SVB, after USD alignment',Scope='Separate 6-day core windows; forward tests train only on earlier events; gas = cutoff-block base fee'),dict(Collection='Multi-event archive extension',Count=len(extension),Unit='Unique exact-block states; 662 new beyond prior collections',Scope='Terra / FTX / SVB ±14d; 6-hour / hourly / SVB 15-minute sampling; not substituted into frozen studies'),dict(Collection='Empirical Curve 3pool states',Count=len(states),Unit='State records; mixed daily/hourly requested cutoffs',Scope='Jan–Apr 2023; separate empirical collection; repeated block cutoffs may occur'),
             dict(Collection='Historical replay catalog',Count=len(replay),Unit='Sparse pool state records',Scope='2021–2026; case pages filter this catalog by dates'),
             dict(Collection='SVB case replay subset',Count=sum('2023-03-09'<=s['timestamp'][:10]<='2023-03-15' for s in replay),Unit='Catalog records in selected case window',Scope='Subset of replay catalog, not additional observations'),
             dict(Collection='Exact-block contract checks',Count=30,Unit='Quotes = 5 blocks × 3 order sizes × 2 directions',Scope='Numerical solver validation only; not 30 independent crisis events')]
@@ -26,6 +27,7 @@ def render_scope():
             {'Study':'Hourly covariate ablation','Across events':'No: Mar 7–17 2023','Across pools':'No: Curve 3pool','Conclusion':'Covariates slightly help GB; both GB versions lose to persistence'},
             {'Study':'Retrospective daily event audit','Across events':'Terra May 2022; FTX Nov 2022; SVB Mar 2023','Across pools':'Not applicable: USD samples only','Conclusion':'Chronological forecast robustness check; not preregistered and not ABM external validation'},
             {'Study':'Multi-event state archive','Across events':'Terra / FTX / SVB: 843 exact blocks','Across pools':'No: Curve 3pool','Conclusion':'Observed pool-state coverage only; no transferred ABM calibration or recomputed hourly covariate leaderboard'},
+            {'Study':'Forward cross-event covariate forecast','Across events':'Terra→FTX; Terra+FTX→SVB','Across pools':'No: Curve 3pool','Conclusion':'Retrospective fixed-spec transfer; no test refitting. Failures and coverage shortfalls retained; not preregistered'},
             {'Study':'Multi-pool / event-held-out ABM','Across events':'Not completed','Across pools':'Not collected','Conclusion':'External validity remains unestablished'}]))
 
 def render_event_audit():
@@ -55,7 +57,7 @@ def render_standards():
     st.markdown('**Clocks.** State: exact block at/before cutoff. Features: interval ending at cutoff, using information then available. Forecast: origin precedes target; residuals update only after resolution. Latest feed and frozen model snapshot may have different cutoffs; generation time is recorded separately.')
     st.markdown('**External-validity gate.** Before claiming calibrated behavior: collect another pool and complete non-SVB events, freeze model/tuning rules before scoring, split by entire event, compare zero-response and persistence, report sensitivity and uncertainty. Current retrospective event audit broadens forecast evidence only.')
     st.markdown('**Bibliography**\n\n1. Egorov (2019), [StableSwap](https://docs.curve.fi/assets/pdf/whitepaper_stableswap.pdf).\n2. Adams et al. (2021), [Uniswap v3 Core](https://app.uniswap.org/whitepaper-v3.pdf).\n3. Gibbs & Candès (2021), [Adaptive Conformal Inference Under Distribution Shift, NeurIPS](https://proceedings.neurips.cc/paper_files/paper/2021/hash/0d441de75945e5acbc865406fc9a2559-Abstract.html). The bounded finite-quantile implementation here differs from the theoretical algorithm; no per-event guarantee is asserted.')
-    st.markdown('**How to cite.** Zhang, Jiayi (2026). *Stablecoin Stress Lab: evidence audit*. Research software, v0.5.0-history-archive. Cite the release commit and dataset fingerprint used; this is software, not a peer-reviewed paper.')
+    st.markdown('**How to cite.** Zhang, Jiayi (2026). *Stablecoin Stress Lab: evidence audit*. Research software, v0.6.0-cross-event. Cite the release commit and dataset fingerprint used; this is software, not a peer-reviewed paper.')
     for name in ['CITATION.cff','LICENSE','REPRODUCIBILITY.md','requirements-lock.txt','release_manifest.json']:
         path=ROOT/name
         if path.exists():st.download_button('Download '+name,path.read_bytes(),name,key='research_contract_'+name)

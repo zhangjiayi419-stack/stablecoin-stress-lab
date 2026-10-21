@@ -1,11 +1,11 @@
-# Evidence audit — v0.5.0-history-archive
+# Evidence audit — v0.6.0-cross-event
 
 Author: Jiayi Zhang, University of Macau. Research software, not a peer-reviewed paper.
 
 ## Exact inputs and environment
 
-Checkout tag `v0.5.0-history-archive`. Record `git rev-parse HEAD` with exported results.
-The release is based on previously published source commit df94966. The release
+Checkout tag `v0.6.0-cross-event`. Record `git rev-parse HEAD` with exported results.
+The release is based on previously published source commit 8a4aa6e. The release
 manifest hashes source and data files independently of the eventual commit ID,
 so it can be verified without a circular self-referential hash.
 
@@ -74,3 +74,7 @@ See CITATION.cff. MIT applies to original code, not third-party data or weights.
 `archive_extension/` contains 843 unique block states (662 new relative to both prior collections), their complete original RPC response archive, collection/validation scripts and manifest. Historical Research exposes event/date/block selection and single-order execution conditional on the exact selected state. The 73-state legacy replay catalog, 346-state empirical feature study and fitted SVB participant anchor remain unchanged. New data has not been substituted into frozen forecast or behavioral results.
 
 Run `python archive_extension/restore_raw_cache.py`, then `python archive_extension/validate_snapshots.py`. Restoration reconstructs the request-keyed cache from the archived responses without making network requests.
+
+## Cross-event release
+
+See `CROSS_EVENT_RESEARCH.md`. Run `python build_cross_event_study.py` against packaged frozen observations; no API recollection is needed. The fixed protocol, exclusions, fit/calibration/test clocks, raw response shards and predictions are in `cross_event_study/`. The new study is retrospective and preserves failed event transfer and interval coverage.

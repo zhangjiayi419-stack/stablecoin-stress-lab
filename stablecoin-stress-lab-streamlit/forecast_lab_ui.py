@@ -94,7 +94,10 @@ def render_foundation_archive(default_rows):
 
 
 def render_forecast_lab(default_rows):
-    study,foundation=st.tabs(['Regime, SETAR & interval evidence','Foundation-model baseline archive'])
+    transfer,study,foundation=st.tabs(['Forward event transfer','Regime, SETAR & interval evidence','Foundation-model baseline archive'])
+    with transfer:
+        from cross_event_ui import render_cross_event
+        render_cross_event()
     with study:
         from empirical_ui import render_regime_study
         render_regime_study()

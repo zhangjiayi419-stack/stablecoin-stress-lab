@@ -36,6 +36,7 @@ def render_cover(route):
                 st.markdown(f'<div class="finding-label">{label}</div><div class="finding-value">{value}</div>',unsafe_allow_html=True)
                 st.write(text);st.caption(note)
     with st.expander('Finding definitions & evidence'):
+        st.write('New evidence: Forecast Lab → Forward event transfer uses observed Terra / FTX / SVB covariates. Models train only on earlier events, with frozen pre-event intervals. Transfer results are mixed and remain separate from the daily and within-SVB results below.')
         st.write('Observed low: hourly provider samples, March 9–15, 2023; not exchange OHLC. Solver accuracy: maximum absolute relative error over five historical blocks, three sizes and both USDC/USDT directions. Forecast improvement = 100 × (1 − model MAE / persistence MAE); daily and hourly experiments are separate.')
         st.markdown('[Data and contract benchmark]('+REPO+'/tree/main/stablecoin-stress-lab-streamlit/empirical_data) · [Research methods]('+REPO+'/blob/main/stablecoin-stress-lab-streamlit/EMPIRICAL_RESEARCH.md)')
     st.subheader('Try the mechanism')

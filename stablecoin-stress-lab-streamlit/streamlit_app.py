@@ -516,6 +516,6 @@ st.caption('Stablecoin Stress Lab · Observed evidence, explicit assumptions, re
 
 _retained=dict(st.session_state.get('_retained_inputs',{}))
 for _key in list(st.session_state):
-    if _key.startswith(('abm_','model_','sale_','hold_','connected_','v3_','regime_','empirical_','research_','curve_','forecast_','projection_','validation_','hero_')) and _key!='model_csv' and not _key.endswith(('result','phase')):
+    if _key.startswith(('abm_','model_','sale_','hold_','connected_','v3_','regime_','empirical_','research_','curve_','forecast_','projection_','validation_','hero_','transfer_')) and _key!='model_csv' and not _key.endswith(('result','phase')):
         _retained[_key]=st.session_state[_key]
 st.session_state['_retained_inputs']=_retained

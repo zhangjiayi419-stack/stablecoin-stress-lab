@@ -70,11 +70,15 @@ def render_regime_study():
 def render_evidence():
     st.markdown('<div class="eyebrow">07 / Chain evidence</div>',unsafe_allow_html=True)
     st.title('Data & Contract Evidence')
+    st.caption('Original SVB collection below; expanded block archive and cross-event feature study are separately versioned in their tabs.')
     m=artifact('manifest.json');cols=st.columns(4)
     for col,label,number in zip(cols,['State snapshots','Raw pool events','Hourly feature rows','Contract quote checks'],[m['state_count'],m['raw_event_count'],m['hourly_feature_count'],m['contract_quotes']]):col.metric(label,f'{number:,}')
     from research_standards import render_scope
     render_scope()
-    coverage,solver,estimation,extension=st.tabs(['Coverage & clocks','Exact-block get_dy','Effective response estimation','Multi-event archive · 843 blocks'])
+    coverage,solver,estimation,extension,transfer_data=st.tabs(['Original SVB data','Exact-block get_dy','Effective response estimation','Multi-event archive · 843 blocks','Cross-event covariates'])
+    with transfer_data:
+        from cross_event_ui import render_cross_event_data
+        render_cross_event_data('evidence_transfer')
     with extension:
         from snapshot_archive_ui import render_archive
         render_archive(compact=True)
