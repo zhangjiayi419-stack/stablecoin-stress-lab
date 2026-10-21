@@ -1,11 +1,11 @@
-# Evidence audit — v0.4.0-evidence-audit
+# Evidence audit — v0.5.0-history-archive
 
 Author: Jiayi Zhang, University of Macau. Research software, not a peer-reviewed paper.
 
 ## Exact inputs and environment
 
-Checkout tag `v0.4.0-evidence-audit`. Record `git rev-parse HEAD` with exported results.
-The release is based on previously published source commit 0e67941. The release
+Checkout tag `v0.5.0-history-archive`. Record `git rev-parse HEAD` with exported results.
+The release is based on previously published source commit df94966. The release
 manifest hashes source and data files independently of the eventual commit ID,
 so it can be verified without a circular self-referential hash.
 
@@ -68,3 +68,9 @@ Gibbs & Candès (2021), Adaptive Conformal Inference Under Distribution Shift,
 NeurIPS: https://proceedings.neurips.cc/paper_files/paper/2021/hash/0d441de75945e5acbc865406fc9a2559-Abstract.html
 
 See CITATION.cff. MIT applies to original code, not third-party data or weights.
+
+## Multi-event archive extension (2026-10-21)
+
+`archive_extension/` contains 843 unique block states (662 new relative to both prior collections), their complete original RPC response archive, collection/validation scripts and manifest. Historical Research exposes event/date/block selection and single-order execution conditional on the exact selected state. The 73-state legacy replay catalog, 346-state empirical feature study and fitted SVB participant anchor remain unchanged. New data has not been substituted into frozen forecast or behavioral results.
+
+Run `python archive_extension/restore_raw_cache.py`, then `python archive_extension/validate_snapshots.py`. Restoration reconstructs the request-keyed cache from the archived responses without making network requests.

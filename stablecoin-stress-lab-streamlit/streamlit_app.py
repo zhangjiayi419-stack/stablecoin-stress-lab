@@ -89,7 +89,7 @@ with st.sidebar:
     st.markdown('<div class="brand-mark">◈</div><div class="brand">Stablecoin Stress Lab</div><div class="sidebar-kicker">LIQUIDITY RESEARCH</div>',unsafe_allow_html=True)
     page=st.radio('Research workspace',PAGES,key='workspace',label_visibility='collapsed')
     st.caption('A focused workspace for understanding price dislocations and liquidity under stress.')
-    st.markdown(f'<div class="sidebar-footer">Latest market-feed observations<br><strong>{market_date} UTC</strong><br><br>Historical pool data<br><strong>Ethereum · Curve 3pool</strong><br><br>Research prototype<br>No trades or wallet connection</div>',unsafe_allow_html=True)
+    st.markdown(f'<div class="sidebar-footer">Latest market-feed observations<br><strong>{market_date} UTC</strong><br><br>Historical pool data<br><strong>Ethereum · Curve 3pool<br>843-state event archive</strong><br><br>Research prototype<br>No trades or wallet connection</div>',unsafe_allow_html=True)
 
 
 def overview():
@@ -105,8 +105,10 @@ def daily_market_context():
     for asset,col in zip(['USDC','USDT'],cols[:2]):
         row=market[(market.asset==asset)&(market.date_utc==market_date)].iloc[-1]
         col.metric(asset+' / USD',f"{row.close_usd:.6f}",f"{(row.close_usd-1)*10000:+.2f} bps from USD 1",delta_color='off',help='Last sampled price in a completed UTC day. One basis point is 0.01 percentage point.')
-    cols[2].metric('Replay catalog · sparse pool snapshots',f'{len(snapshots)}',help='Replay catalog only; 346 empirical state observations are a separate Jan–Apr 2023 collection. Case pages filter this catalog by date. Counts are not interchangeable.')
-    cols[2].caption(f'{available[0]} → {available[-1]} UTC')
+    from snapshot_archive_ui import archive_data
+    archive_rows,archive_manifest=archive_data()
+    cols[2].metric('Multi-event block archive',f'{len(archive_rows):,}',help='843 exact-block states across Terra, FTX and SVB; 662 new beyond prior collections. Original 73 replay anchors stay frozen.')
+    cols[2].caption('2022-04-28 → 2023-03-25 UTC · 662 new blocks')
     st.subheader('The last 30 observed days')
     recent=market[market.date_utc.isin(sorted(market.date_utc.unique())[-30:])]
     price_chart(recent,bps=True)
@@ -121,6 +123,15 @@ def daily_brief():
 
 
 def historical():
+    archive_tab,case_tab=st.tabs(['Expanded block archive · 843 states','Original event case studies'])
+    with archive_tab:
+        from snapshot_archive_ui import render_archive
+        render_archive()
+    with case_tab:
+        historical_case()
+
+
+def historical_case():
     header('04 / Historical evidence','What happened during the stress?','Read the market evidence first. Historical observations describe an event; model estimates explain a possible execution mechanism.')
     case=st.selectbox('Case study',list(CASES),key='research_case')
     start,end,default_day,event_id=CASES[case]

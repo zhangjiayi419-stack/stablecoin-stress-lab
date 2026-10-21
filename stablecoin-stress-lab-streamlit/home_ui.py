@@ -27,7 +27,7 @@ def render_cover(route):
 </style><section class="research-hero"><div class="hero-label">01 / RESEARCH WORKSPACE</div><h1 class="hero-title">Stablecoin Stress Lab</h1><p class="hero-description">A price near $1 does not mean you can sell at $1.</p><p class="hero-purpose">A research lab for understanding how stablecoin sell-offs strain liquidity, trigger feedback loops, and challenge price forecasts.</p></section>''',unsafe_allow_html=True)
     st.subheader('Key Findings')
     f=findings();cols=st.columns(3)
-    cards=[('Observed stress',f"${f['low']:.4f}",'USDC’s sampled low during the March 2023 SVB shock.',f"{f['quotes']} historical contract quotes reproduced within 0.000001 bps."),
+    cards=[('Observed stress',f"${f['low']:.4f}",'USDC’s sampled low during the March 2023 SVB shock.',f"{f['quotes']} multi-size historical contract quotes reproduced within 0.000001 bps. An additional 843-block archive now covers Terra, FTX and SVB."),
            ('Daily forecasting',f"+{f['improvement']:.1f}%",'Lower overall daily MAE in one SVB evaluation; this is not a crisis-performance claim.',f"Fixed SVB evaluation: **{f['targets']} shared one-day targets**; only **{f['stress_targets']} stress target** (>100 bps). On that target GB error is 497.1 bps vs persistence 445.0 bps."),
            ('Hourly baseline shortfall',f"{f['covariate_improvement']:.1f}%",'GB + observed covariates versus persistence: lower is worse on this skill scale.',f"Price-only GB: {f['price_only_improvement']:.1f}%. Covariates reduce GB MAE by {f['ablation_gain']:.2f}%, but neither version beats persistence. 171 shared hourly targets, including 41 stress targets.")]
     for col,(label,value,text,note) in zip(cols,cards):

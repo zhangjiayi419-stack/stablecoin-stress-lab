@@ -74,7 +74,10 @@ def render_evidence():
     for col,label,number in zip(cols,['State snapshots','Raw pool events','Hourly feature rows','Contract quote checks'],[m['state_count'],m['raw_event_count'],m['hourly_feature_count'],m['contract_quotes']]):col.metric(label,f'{number:,}')
     from research_standards import render_scope
     render_scope()
-    coverage,solver,estimation=st.tabs(['Coverage & clocks','Exact-block get_dy','Effective response estimation'])
+    coverage,solver,estimation,extension=st.tabs(['Coverage & clocks','Exact-block get_dy','Effective response estimation','Multi-event archive · 843 blocks'])
+    with extension:
+        from snapshot_archive_ui import render_archive
+        render_archive(compact=True)
     with coverage:
         st.table(pd.DataFrame([
             dict(Dataset='USD sampled prices',Window='2023-01-01 → 2023-04-15',Frequency='Hourly provider observations; daily close = last sample per UTC date',Source=m['price_source']),
