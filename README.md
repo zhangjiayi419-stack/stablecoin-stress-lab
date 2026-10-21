@@ -59,3 +59,17 @@ artifacts. Mutable daily market reports are excluded from the release hash set.
 
 Third-party data retains provider terms. This research software does not execute
 trades or establish future model performance. Contact: zhangjiayi419@gmail.com.
+
+## Historical archive extension — v0.5.0-history-archive
+
+Historical Research now includes **843 exact-block Curve 3pool states** across
+Terra, FTX and SVB windows; **662 blocks are new** relative to both prior
+collections. Browse event/date/block, inspect token quantities, and calculate a
+USDC→USDT single-order quote using the selected historical state. Raw RPC
+responses, block hashes, manifests and standalone collection scripts are bundled
+in `stablecoin-stress-lab-streamlit/archive_extension/`.
+
+The original 73 replay anchors, 346-state empirical study and fitted SVB
+participant case remain frozen. Added snapshots do not imply forecast retraining,
+structural calibration, cross-pool validation or independent crisis samples.
+For this extension, use tag `v0.5.0-history-archive` and its content manifest.
