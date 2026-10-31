@@ -1,12 +1,5 @@
 [
   {
-    "date_utc": "2026-08-01",
-    "asset": "USDC",
-    "close_usd": 0.9995997560205034,
-    "source": "https://api.coingecko.com/api/v3/coins/usd-coin/market_chart?vs_currency=usd&days=90",
-    "method": "Last sampled USD observation per completed UTC day; not exchange OHLC"
-  },
-  {
     "date_utc": "2026-08-02",
     "asset": "USDC",
     "close_usd": 0.9995086545103483,
@@ -630,10 +623,10 @@
     "method": "Last sampled USD observation per completed UTC day; not exchange OHLC"
   },
   {
-    "date_utc": "2026-08-01",
-    "asset": "USDT",
-    "close_usd": 0.9992406290157095,
-    "source": "https://api.coingecko.com/api/v3/coins/tether/market_chart?vs_currency=usd&days=90",
+    "date_utc": "2026-10-30",
+    "asset": "USDC",
+    "close_usd": 0.9997657325990436,
+    "source": "https://api.coingecko.com/api/v3/coins/usd-coin/market_chart?vs_currency=usd&days=90",
     "method": "Last sampled USD observation per completed UTC day; not exchange OHLC"
   },
   {
@@ -1256,6 +1249,13 @@
     "date_utc": "2026-10-29",
     "asset": "USDT",
     "close_usd": 0.9986010770142277,
+    "source": "https://api.coingecko.com/api/v3/coins/tether/market_chart?vs_currency=usd&days=90",
+    "method": "Last sampled USD observation per completed UTC day; not exchange OHLC"
+  },
+  {
+    "date_utc": "2026-10-30",
+    "asset": "USDT",
+    "close_usd": 0.9990653470374721,
     "source": "https://api.coingecko.com/api/v3/coins/tether/market_chart?vs_currency=usd&days=90",
     "method": "Last sampled USD observation per completed UTC day; not exchange OHLC"
   }
