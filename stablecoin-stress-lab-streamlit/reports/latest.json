@@ -1,124 +1,124 @@
 {
   "facts": {
-    "generated_at_utc": "2026-11-04T07:30:29.527202+00:00",
+    "generated_at_utc": "2026-11-05T07:55:33.352343+00:00",
     "assets": [
       {
         "asset": "USDC",
-        "as_of": "2026-11-03",
+        "as_of": "2026-11-04",
         "observations": 90,
-        "latest_usd": 0.9996344175679052,
-        "deviation_bps": -3.655824320948353,
+        "latest_usd": 0.9996985560337268,
+        "deviation_bps": -3.0144396627318493,
         "model": "AR(1), phi constrained to [-0.98, 0.98], last 90 daily USD observations",
-        "phi": 0.6151852496979041,
+        "phi": 0.6154236800346761,
         "forecast": [
           {
-            "date_utc": "2026-11-04",
-            "forecast_usd": 0.9996889227375446,
-            "lower_90": 0.9995024845437755,
-            "upper_90": 0.9998563963649737
-          },
-          {
             "date_utc": "2026-11-05",
-            "forecast_usd": 0.9997224535139391,
-            "lower_90": 0.9994362377261664,
-            "upper_90": 0.9999378866162657
+            "forecast_usd": 0.9997283044245906,
+            "lower_90": 0.9994773103455109,
+            "upper_90": 0.9998910032057066
           },
           {
             "date_utc": "2026-11-06",
-            "forecast_usd": 0.9997430811529879,
-            "lower_90": 0.9994217689434487,
-            "upper_90": 0.9999810724547666
+            "forecast_usd": 0.9997466122887712,
+            "lower_90": 0.9995034943312265,
+            "upper_90": 0.9999723420055717
           },
           {
             "date_utc": "2026-11-07",
-            "forecast_usd": 0.9997557709722669,
-            "lower_90": 0.9994579518509655,
-            "upper_90": 1.000006680794395
+            "forecast_usd": 0.9997578793819187,
+            "lower_90": 0.9994571139754246,
+            "upper_90": 1.000004165548031
           },
           {
             "date_utc": "2026-11-08",
-            "forecast_usd": 0.9997635775619086,
-            "lower_90": 0.9994734144176175,
-            "upper_90": 0.9999900670588668
+            "forecast_usd": 0.9997648134178468,
+            "lower_90": 0.9994488073880657,
+            "upper_90": 1.0000149433185452
           },
           {
             "date_utc": "2026-11-09",
-            "forecast_usd": 0.9997683800607066,
-            "lower_90": 0.99946773862689,
-            "upper_90": 0.9999986265687087
+            "forecast_usd": 0.9997690807877553,
+            "lower_90": 0.9994882943971131,
+            "upper_90": 1.0000200106543526
           },
           {
             "date_utc": "2026-11-10",
-            "forecast_usd": 0.9997713344871288,
-            "lower_90": 0.9994503389319987,
-            "upper_90": 0.9999990990692297
+            "forecast_usd": 0.9997717070282484,
+            "lower_90": 0.9994687713847851,
+            "upper_90": 1.0000288808948297
+          },
+          {
+            "date_utc": "2026-11-11",
+            "forecast_usd": 0.9997733232788373,
+            "lower_90": 0.9994816693152935,
+            "upper_90": 1.000024814752888
           }
         ],
         "validation": {
           "horizon_days": 1,
           "n": 60,
-          "mae_usd": 0.00011086181418018907,
-          "persistence_mae_usd": 0.00012150394755730173
+          "mae_usd": 0.00011078955531927578,
+          "persistence_mae_usd": 0.00012191971003542856
         },
         "limitations": "90% residual-bootstrap model interval, conditional on fitted parameters; not calibrated depeg probabilities. Regime changes, liquidity and issuer fundamentals are excluded."
       },
       {
         "asset": "USDT",
-        "as_of": "2026-11-03",
+        "as_of": "2026-11-04",
         "observations": 90,
-        "latest_usd": 0.9991770820768476,
-        "deviation_bps": -8.229179231523664,
+        "latest_usd": 0.9993792388797559,
+        "deviation_bps": -6.207611202441177,
         "model": "AR(1), phi constrained to [-0.98, 0.98], last 90 daily USD observations",
-        "phi": 0.8321371141971671,
+        "phi": 0.8313071714464676,
         "forecast": [
           {
-            "date_utc": "2026-11-04",
-            "forecast_usd": 0.999232843413479,
-            "lower_90": 0.9988501125619179,
-            "upper_90": 0.9995665842134875
-          },
-          {
             "date_utc": "2026-11-05",
-            "forecast_usd": 0.9992792444912271,
-            "lower_90": 0.9988040669710394,
-            "upper_90": 0.9997073923121768
+            "forecast_usd": 0.9994008629100056,
+            "lower_90": 0.9989420042427795,
+            "upper_90": 0.9997122385768318
           },
           {
             "date_utc": "2026-11-06",
-            "forecast_usd": 0.99931785655016,
-            "lower_90": 0.9987718737119841,
-            "upper_90": 0.9997839111671303
+            "forecast_usd": 0.9994188391214278,
+            "lower_90": 0.9989269199026516,
+            "upper_90": 0.9998274778578679
           },
           {
             "date_utc": "2026-11-07",
-            "forecast_usd": 0.9993499870774537,
-            "lower_90": 0.9988136409538216,
-            "upper_90": 0.9998691040153764
+            "forecast_usd": 0.9994337828748985,
+            "lower_90": 0.9989044678812533,
+            "upper_90": 0.9998912702709588
           },
           {
             "date_utc": "2026-11-08",
-            "forecast_usd": 0.9993767240817135,
-            "lower_90": 0.9988140499413662,
-            "upper_90": 0.999901029135062
+            "forecast_usd": 0.999446205724327,
+            "lower_90": 0.9988591691846721,
+            "upper_90": 0.9999627376490822
           },
           {
             "date_utc": "2026-11-09",
-            "forecast_usd": 0.9993989729352806,
-            "lower_90": 0.9988261035795256,
-            "upper_90": 0.9999403630023197
+            "forecast_usd": 0.9994565329281467,
+            "lower_90": 0.9989211197912269,
+            "upper_90": 0.9999838968633469
           },
           {
             "date_utc": "2026-11-10",
-            "forecast_usd": 0.9994174870320821,
-            "lower_90": 0.9988368787607192,
-            "upper_90": 0.9999652560937701
+            "forecast_usd": 0.9994651180067431,
+            "lower_90": 0.9988988018132328,
+            "upper_90": 1.0000041271752487
+          },
+          {
+            "date_utc": "2026-11-11",
+            "forecast_usd": 0.9994722548441476,
+            "lower_90": 0.9989037081335158,
+            "upper_90": 1.0000106835595104
           }
         ],
         "validation": {
           "horizon_days": 1,
           "n": 60,
-          "mae_usd": 0.00017727164530502714,
-          "persistence_mae_usd": 0.00017869841684911198
+          "mae_usd": 0.00017587660196780226,
+          "persistence_mae_usd": 0.0001787556425050407
         },
         "limitations": "90% residual-bootstrap model interval, conditional on fitted parameters; not calibrated depeg probabilities. Regime changes, liquidity and issuer fundamentals are excluded."
       }
@@ -131,6 +131,6 @@
     "data_age_days": 1,
     "status": "current"
   },
-  "markdown": "# Stablecoin Daily Data Brief \u2014 2026-11-03 UTC\n\n**Template-generated statistical brief; not LLM-generated.**\n\nData as of 2026-11-03; generated at 2026-11-04T07:30:29.527202+00:00.\nLLM status: Set DASHSCOPE_API_KEY on the server before generating a brief.\n\n## Market snapshot and outlook\n### USDC\nLatest sampled USD price: $0.999634; deviation from $1: -3.66 bps.\nSeven-day AR(1) baseline: $0.999771; conditional 90% model interval: $0.999450\u2013$0.999999.\nOne-day chronological validation (60 observations): AR(1) MAE $0.000111; persistence MAE $0.000122.\n\n### USDT\nLatest sampled USD price: $0.999177; deviation from $1: -8.23 bps.\nSeven-day AR(1) baseline: $0.999417; conditional 90% model interval: $0.998837\u2013$0.999965.\nOne-day chronological validation (60 observations): AR(1) MAE $0.000177; persistence MAE $0.000179.\n\n## Limitations\nDaily sampled USD prices only; no current news, reserves or liquidity feed. Multi-day intervals are not independently validated and are not calibrated depeg probabilities. This research baseline does not establish investment performance.\n\n## Sources\n- https://api.coingecko.com/api/v3/coins/tether/market_chart?vs_currency=usd&days=90\n- https://api.coingecko.com/api/v3/coins/usd-coin/market_chart?vs_currency=usd&days=90",
+  "markdown": "# Stablecoin Daily Data Brief \u2014 2026-11-04 UTC\n\n**Template-generated statistical brief; not LLM-generated.**\n\nData as of 2026-11-04; generated at 2026-11-05T07:55:33.352343+00:00.\nLLM status: Set DASHSCOPE_API_KEY on the server before generating a brief.\n\n## Market snapshot and outlook\n### USDC\nLatest sampled USD price: $0.999699; deviation from $1: -3.01 bps.\nSeven-day AR(1) baseline: $0.999773; conditional 90% model interval: $0.999482\u2013$1.000025.\nOne-day chronological validation (60 observations): AR(1) MAE $0.000111; persistence MAE $0.000122.\n\n### USDT\nLatest sampled USD price: $0.999379; deviation from $1: -6.21 bps.\nSeven-day AR(1) baseline: $0.999472; conditional 90% model interval: $0.998904\u2013$1.000011.\nOne-day chronological validation (60 observations): AR(1) MAE $0.000176; persistence MAE $0.000179.\n\n## Limitations\nDaily sampled USD prices only; no current news, reserves or liquidity feed. Multi-day intervals are not independently validated and are not calibrated depeg probabilities. This research baseline does not establish investment performance.\n\n## Sources\n- https://api.coingecko.com/api/v3/coins/tether/market_chart?vs_currency=usd&days=90\n- https://api.coingecko.com/api/v3/coins/usd-coin/market_chart?vs_currency=usd&days=90",
   "llm_status": "Set DASHSCOPE_API_KEY on the server before generating a brief."
 }
